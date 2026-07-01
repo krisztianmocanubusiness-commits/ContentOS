@@ -3,7 +3,10 @@ import {
   FileStack,
   CalendarDays,
   BarChart3,
+  Share2,
+  Inbox,
   FolderOpen,
+  CircleDollarSign,
   Users,
   Settings,
   type LucideIcon,
@@ -20,7 +23,10 @@ export const navItems: NavItem[] = [
   { title: "Content", href: "/content", icon: FileStack },
   { title: "Calendar", href: "/calendar", icon: CalendarDays },
   { title: "Analytics", href: "/analytics", icon: BarChart3 },
+  { title: "Social Accounts", href: "/social-accounts", icon: Share2 },
+  { title: "Inbox", href: "/inbox", icon: Inbox },
   { title: "Assets", href: "/assets", icon: FolderOpen },
+  { title: "Monetization", href: "/monetization", icon: CircleDollarSign },
   { title: "Team", href: "/team", icon: Users },
 ];
 

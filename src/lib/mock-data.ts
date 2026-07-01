@@ -209,10 +209,9 @@ export function socialAccountsForWorkspace(workspaceId: string) {
   return socialAccounts.filter((account) => account.workspaceId === workspaceId);
 }
 
-// Team members are shared across the whole account, not scoped per
-// workspace/brand.
 export type TeamMember = {
   id: string;
+  workspaceId: string;
   name: string;
   email: string;
   role: "Owner" | "Admin" | "Editor" | "Viewer";
@@ -221,9 +220,195 @@ export type TeamMember = {
 };
 
 export const teamMembers: TeamMember[] = [
-  { id: "t1", name: "Krisztián Mocanu", email: "krisztianmocanu.business@gmail.com", role: "Owner", status: "Active", initials: "KM" },
-  { id: "t2", name: "Ava Reyes", email: "ava@keris.co", role: "Admin", status: "Active", initials: "AR" },
-  { id: "t3", name: "Sam Kim", email: "sam@buildible.com", role: "Editor", status: "Active", initials: "SK" },
-  { id: "t4", name: "Leo Dupont", email: "leo@buildible.com", role: "Editor", status: "Invited", initials: "LD" },
-  { id: "t5", name: "Priya Nair", email: "priya@buildible.com", role: "Viewer", status: "Active", initials: "PN" },
+  { id: "t1", workspaceId: "keris", name: "Krisztián Mocanu", email: "krisztianmocanu.business@gmail.com", role: "Owner", status: "Active", initials: "KM" },
+  { id: "t2", workspaceId: "keris", name: "Ava Reyes", email: "ava@keris.co", role: "Admin", status: "Active", initials: "AR" },
+  { id: "t3", workspaceId: "keris", name: "Mila Chen", email: "mila@keris.co", role: "Editor", status: "Active", initials: "MC" },
+
+  { id: "t4", workspaceId: "buildible", name: "Krisztián Mocanu", email: "krisztianmocanu.business@gmail.com", role: "Owner", status: "Active", initials: "KM" },
+  { id: "t5", workspaceId: "buildible", name: "Sam Kim", email: "sam@buildible.com", role: "Editor", status: "Active", initials: "SK" },
+  { id: "t6", workspaceId: "buildible", name: "Leo Dupont", email: "leo@buildible.com", role: "Editor", status: "Invited", initials: "LD" },
+  { id: "t7", workspaceId: "buildible", name: "Priya Nair", email: "priya@buildible.com", role: "Viewer", status: "Active", initials: "PN" },
+
+  { id: "t8", workspaceId: "personal", name: "Krisztián Mocanu", email: "krisztianmocanu.business@gmail.com", role: "Owner", status: "Active", initials: "KM" },
 ];
+
+export function teamMembersForWorkspace(workspaceId: string) {
+  return teamMembers.filter((member) => member.workspaceId === workspaceId);
+}
+
+export type InboxMessage = {
+  id: string;
+  from: "them" | "you";
+  body: string;
+  timestamp: string;
+};
+
+export type Conversation = {
+  id: string;
+  workspaceId: string;
+  platform: Platform;
+  contactName: string;
+  contactHandle: string;
+  contactInitials: string;
+  lastMessageAt: string;
+  unread: boolean;
+  messages: InboxMessage[];
+};
+
+export const conversations: Conversation[] = [
+  {
+    id: "conv1",
+    workspaceId: "keris",
+    platform: "Instagram",
+    contactName: "Sophie Marlowe",
+    contactHandle: "@sophie.creates",
+    contactInitials: "SM",
+    lastMessageAt: "2h ago",
+    unread: true,
+    messages: [
+      { id: "m1", from: "them", body: "Loved your last reel! Where's that jacket from?", timestamp: "2h ago" },
+    ],
+  },
+  {
+    id: "conv2",
+    workspaceId: "keris",
+    platform: "Instagram",
+    contactName: "Glowlux Skincare",
+    contactHandle: "@glowlux",
+    contactInitials: "GL",
+    lastMessageAt: "5h ago",
+    unread: true,
+    messages: [
+      { id: "m2", from: "them", body: "Hi Keris! We'd love to collaborate on a reel package for our new serum launch.", timestamp: "6h ago" },
+      { id: "m3", from: "you", body: "Hi! Thanks for reaching out — send over the brief and I'll take a look.", timestamp: "5h ago" },
+    ],
+  },
+  {
+    id: "conv3",
+    workspaceId: "keris",
+    platform: "TikTok",
+    contactName: "Jordan Wells",
+    contactHandle: "@jordanw",
+    contactInitials: "JW",
+    lastMessageAt: "1d ago",
+    unread: false,
+    messages: [
+      { id: "m4", from: "them", body: "Your morning routine reel is my new favorite 🔥", timestamp: "1d ago" },
+      { id: "m5", from: "you", body: "Thank you so much!! 💛", timestamp: "1d ago" },
+    ],
+  },
+
+  {
+    id: "conv4",
+    workspaceId: "buildible",
+    platform: "LinkedIn",
+    contactName: "Jordan Lee",
+    contactHandle: "Jordan Lee",
+    contactInitials: "JL",
+    lastMessageAt: "1h ago",
+    unread: true,
+    messages: [
+      { id: "m6", from: "them", body: "Is there an enterprise plan with SSO? We're evaluating for a 200-seat rollout.", timestamp: "1h ago" },
+    ],
+  },
+  {
+    id: "conv5",
+    workspaceId: "buildible",
+    platform: "X",
+    contactName: "Dev Fan",
+    contactHandle: "@devfan22",
+    contactInitials: "DF",
+    lastMessageAt: "4h ago",
+    unread: false,
+    messages: [
+      { id: "m7", from: "them", body: "Great changelog post — when's the webhook feature landing?", timestamp: "5h ago" },
+      { id: "m8", from: "you", body: "Targeting next sprint, should ship within 2 weeks!", timestamp: "4h ago" },
+    ],
+  },
+  {
+    id: "conv6",
+    workspaceId: "buildible",
+    platform: "LinkedIn",
+    contactName: "Nova Retail Team",
+    contactHandle: "Nova Retail",
+    contactInitials: "NR",
+    lastMessageAt: "2d ago",
+    unread: false,
+    messages: [
+      { id: "m9", from: "them", body: "Thanks for featuring us in the case study, it's already driving traffic our way!", timestamp: "2d ago" },
+    ],
+  },
+
+  // Personal — intentionally empty
+];
+
+export function conversationsForWorkspace(workspaceId: string) {
+  return conversations.filter((conversation) => conversation.workspaceId === workspaceId);
+}
+
+export type DealStatus = "Negotiating" | "In Progress" | "Signed" | "Paid" | "Completed";
+
+export type Deal = {
+  id: string;
+  workspaceId: string;
+  brand: string;
+  title: string;
+  value: string;
+  status: DealStatus;
+  dueDate: string;
+};
+
+export type RevenueStream = {
+  label: string;
+  value: string;
+  change: string;
+  trend: "up" | "down";
+};
+
+type WorkspaceMonetization = {
+  summary: RevenueStream[];
+  deals: Deal[];
+};
+
+const emptyMonetization: WorkspaceMonetization = {
+  summary: [
+    { label: "Total Revenue", value: "$0", change: "—", trend: "up" },
+    { label: "Active Deals", value: "0", change: "—", trend: "up" },
+  ],
+  deals: [],
+};
+
+export const monetizationByWorkspace: Record<string, WorkspaceMonetization> = {
+  keris: {
+    summary: [
+      { label: "Total Revenue", value: "$18.4K", change: "+22.0%", trend: "up" },
+      { label: "Brand Deals", value: "$12.0K", change: "+30.1%", trend: "up" },
+      { label: "Affiliate Earnings", value: "$2.9K", change: "+8.4%", trend: "up" },
+      { label: "Memberships", value: "$3.5K", change: "+5.2%", trend: "up" },
+    ],
+    deals: [
+      { id: "d1", workspaceId: "keris", brand: "Glowlux Skincare", title: "Instagram reel package", value: "$4,500", status: "Signed", dueDate: "Jul 15" },
+      { id: "d2", workspaceId: "keris", brand: "Trailhead Apparel", title: "TikTok UGC series", value: "$6,000", status: "In Progress", dueDate: "Jul 20" },
+      { id: "d3", workspaceId: "keris", brand: "Wanderly Luggage", title: "Story takeover", value: "$1,500", status: "Negotiating", dueDate: "Aug 1" },
+      { id: "d4", workspaceId: "keris", brand: "Solstice Sunglasses", title: "YouTube integration", value: "$3,200", status: "Paid", dueDate: "Jun 25" },
+    ],
+  },
+  buildible: {
+    summary: [
+      { label: "Total Revenue", value: "$15.3K", change: "+12.4%", trend: "up" },
+      { label: "Sponsorships", value: "$9.2K", change: "+14.1%", trend: "up" },
+      { label: "Referral Revenue", value: "$4.1K", change: "+19.0%", trend: "up" },
+      { label: "Webinar Co-sponsors", value: "$2.0K", change: "0.0%", trend: "up" },
+    ],
+    deals: [
+      { id: "d5", workspaceId: "buildible", brand: "DataSync Co", title: "Newsletter sponsorship", value: "$2,500", status: "Signed", dueDate: "Jul 10" },
+      { id: "d6", workspaceId: "buildible", brand: "CloudOps Inc", title: "Webinar co-sponsor", value: "$2,000", status: "Completed", dueDate: "Jun 20" },
+      { id: "d7", workspaceId: "buildible", brand: "Flowbase", title: "Affiliate partnership", value: "$1,600", status: "In Progress", dueDate: "Jul 25" },
+      { id: "d8", workspaceId: "buildible", brand: "PipelineIQ", title: "Case study swap", value: "$0", status: "Negotiating", dueDate: "Aug 5" },
+    ],
+  },
+};
+
+export function monetizationForWorkspace(workspaceId: string): WorkspaceMonetization {
+  return monetizationByWorkspace[workspaceId] ?? emptyMonetization;
+}

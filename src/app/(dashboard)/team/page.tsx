@@ -1,3 +1,5 @@
+"use client";
+
 import { UserPlus } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -13,14 +15,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { teamMembers } from "@/lib/mock-data";
+import { teamMembersForWorkspace } from "@/lib/mock-data";
+import { useWorkspace } from "@/context/workspace-context";
 
 export default function TeamPage() {
+  const { activeWorkspace } = useWorkspace();
+  const members = teamMembersForWorkspace(activeWorkspace.id);
+
   return (
     <div>
       <PageHeader
         title="Team"
-        description="Manage who has access to this workspace."
+        description={`Manage who has access to ${activeWorkspace.name}.`}
         action={
           <Button>
             <UserPlus />
@@ -39,7 +45,7 @@ export default function TeamPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {teamMembers.map((member) => (
+            {members.map((member) => (
               <TableRow key={member.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
