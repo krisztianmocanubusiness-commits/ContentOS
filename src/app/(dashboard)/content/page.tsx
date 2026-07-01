@@ -1,3 +1,5 @@
+"use client";
+
 import { Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -13,8 +15,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { contentItems, type ContentStatus } from "@/lib/mock-data";
+import { contentForWorkspace, type ContentStatus } from "@/lib/mock-data";
 import { statusVariant } from "@/lib/status";
+import { useWorkspace } from "@/context/workspace-context";
 
 const filters: { label: string; status: ContentStatus | "All" }[] = [
   { label: "All", status: "All" },
@@ -25,11 +28,14 @@ const filters: { label: string; status: ContentStatus | "All" }[] = [
 ];
 
 export default function ContentPage() {
+  const { activeWorkspace } = useWorkspace();
+  const contentItems = contentForWorkspace(activeWorkspace.id);
+
   return (
     <div>
       <PageHeader
         title="Content"
-        description="Every piece of content in your pipeline, in one place."
+        description={`Every piece of content in ${activeWorkspace.name}'s pipeline.`}
         action={
           <Button>
             <Plus />
@@ -38,7 +44,7 @@ export default function ContentPage() {
         }
       />
 
-      <Tabs defaultValue="All">
+      <Tabs defaultValue="All" key={activeWorkspace.id}>
         <TabsList className="mb-4">
           {filters.map((filter) => (
             <TabsTrigger key={filter.status} value={filter.status}>
@@ -94,7 +100,9 @@ export default function ContentPage() {
                           colSpan={5}
                           className="py-10 text-center text-muted-foreground"
                         >
-                          No content in this view yet.
+                          {contentItems.length === 0
+                            ? `No content yet in ${activeWorkspace.name}.`
+                            : "No content in this view yet."}
                         </TableCell>
                       </TableRow>
                     )}

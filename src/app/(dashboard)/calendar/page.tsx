@@ -1,19 +1,15 @@
+"use client";
+
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { calendarEvents } from "@/lib/mock-data";
+import { calendarEventsForWorkspace } from "@/lib/mock-data";
+import { platformColor } from "@/lib/platform";
+import { useWorkspace } from "@/context/workspace-context";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-const platformDot: Record<string, string> = {
-  Instagram: "bg-pink-500",
-  TikTok: "bg-foreground",
-  X: "bg-sky-500",
-  LinkedIn: "bg-blue-600",
-  YouTube: "bg-red-500",
-};
 
 function buildMonthGrid(year: number, month: number) {
   const firstDay = new Date(year, month, 1).getDay();
@@ -27,6 +23,8 @@ function buildMonthGrid(year: number, month: number) {
 }
 
 export default function CalendarPage() {
+  const { activeWorkspace } = useWorkspace();
+  const events = calendarEventsForWorkspace(activeWorkspace.id);
   const year = 2026;
   const month = 6; // July
   const cells = buildMonthGrid(year, month);
@@ -36,7 +34,7 @@ export default function CalendarPage() {
     <div>
       <PageHeader
         title="Calendar"
-        description="Visualize your content schedule across every channel."
+        description={`Visualize ${activeWorkspace.name}'s content schedule across every channel.`}
         action={
           <Button>
             <Plus />
@@ -68,7 +66,7 @@ export default function CalendarPage() {
             </div>
           ))}
           {cells.map((day, idx) => {
-            const events = calendarEvents.filter((e) => e.day === day);
+            const dayEvents = events.filter((e) => e.day === day);
             return (
               <div
                 key={idx}
@@ -87,7 +85,7 @@ export default function CalendarPage() {
                       {day}
                     </span>
                     <div className="flex flex-col gap-1">
-                      {events.map((event) => (
+                      {dayEvents.map((event) => (
                         <div
                           key={event.id}
                           className="flex items-center gap-1.5 truncate rounded-sm bg-muted px-1.5 py-1 text-[11px] font-medium"
@@ -95,7 +93,7 @@ export default function CalendarPage() {
                         >
                           <span
                             className={`size-1.5 shrink-0 rounded-full ${
-                              platformDot[event.platform] ?? "bg-muted-foreground"
+                              platformColor[event.platform] ?? "bg-muted-foreground"
                             }`}
                           />
                           <span className="truncate">{event.title}</span>

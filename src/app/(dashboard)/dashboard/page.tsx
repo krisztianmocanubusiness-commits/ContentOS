@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowUpRight, ArrowDownRight, Plus } from "lucide-react";
 
@@ -12,23 +14,26 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  analyticsSummary,
-  calendarEvents,
-  contentItems,
+  analyticsForWorkspace,
+  calendarEventsForWorkspace,
+  contentForWorkspace,
   currentUser,
 } from "@/lib/mock-data";
 import { statusVariant } from "@/lib/status";
+import { useWorkspace } from "@/context/workspace-context";
 
 export default function DashboardPage() {
-  const upcoming = calendarEvents.slice(0, 4);
-  const recent = contentItems.slice(0, 5);
+  const { activeWorkspace } = useWorkspace();
+  const analytics = analyticsForWorkspace(activeWorkspace.id);
+  const upcoming = calendarEventsForWorkspace(activeWorkspace.id).slice(0, 4);
+  const recent = contentForWorkspace(activeWorkspace.id).slice(0, 5);
   const firstName = currentUser.name.split(" ")[0];
 
   return (
     <div>
       <PageHeader
         title={`Welcome back, ${firstName}`}
-        description="Here's what's happening across your workspace."
+        description={`Here's what's happening in ${activeWorkspace.name}.`}
         action={
           <Button asChild>
             <Link href="/content">
@@ -40,7 +45,7 @@ export default function DashboardPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {analyticsSummary.map((stat) => (
+        {analytics.summary.map((stat) => (
           <Card key={stat.label}>
             <CardHeader>
               <CardDescription>{stat.label}</CardDescription>
@@ -80,20 +85,26 @@ export default function DashboardPage() {
             </Button>
           </CardHeader>
           <CardContent className="flex flex-col gap-1 pt-0">
-            {recent.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/60"
-              >
-                <div className="flex min-w-0 flex-col">
-                  <span className="truncate text-sm font-medium">{item.title}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {item.platform} · {item.author}
-                  </span>
+            {recent.length === 0 ? (
+              <p className="px-2 py-6 text-sm text-muted-foreground">
+                No content yet in {activeWorkspace.name}.
+              </p>
+            ) : (
+              recent.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/60"
+                >
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate text-sm font-medium">{item.title}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {item.platform} · {item.author}
+                    </span>
+                  </div>
+                  <Badge variant={statusVariant(item.status)}>{item.status}</Badge>
                 </div>
-                <Badge variant={statusVariant(item.status)}>{item.status}</Badge>
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
 
@@ -108,23 +119,29 @@ export default function DashboardPage() {
             </Button>
           </CardHeader>
           <CardContent className="flex flex-col gap-1 pt-0">
-            {upcoming.map((event) => (
-              <div
-                key={event.id}
-                className="flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/60"
-              >
-                <div className="flex size-9 shrink-0 flex-col items-center justify-center rounded-md border border-border text-xs font-semibold leading-none">
-                  <span>Jul</span>
-                  <span>{event.day}</span>
+            {upcoming.length === 0 ? (
+              <p className="px-2 py-6 text-sm text-muted-foreground">
+                Nothing scheduled yet.
+              </p>
+            ) : (
+              upcoming.map((event) => (
+                <div
+                  key={event.id}
+                  className="flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/60"
+                >
+                  <div className="flex size-9 shrink-0 flex-col items-center justify-center rounded-md border border-border text-xs font-semibold leading-none">
+                    <span>Jul</span>
+                    <span>{event.day}</span>
+                  </div>
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate text-sm font-medium">{event.title}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {event.time} · {event.platform}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex min-w-0 flex-col">
-                  <span className="truncate text-sm font-medium">{event.title}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {event.time} · {event.platform}
-                  </span>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
       </div>

@@ -1,3 +1,5 @@
+"use client";
+
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -23,16 +25,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { analyticsSummary, topPosts } from "@/lib/mock-data";
-
-const chartBars = [42, 58, 51, 66, 60, 74, 69, 80, 72, 88, 84, 96];
+import { analyticsForWorkspace } from "@/lib/mock-data";
+import { useWorkspace } from "@/context/workspace-context";
 
 export default function AnalyticsPage() {
+  const { activeWorkspace } = useWorkspace();
+  const { summary, topPosts, chart } = analyticsForWorkspace(activeWorkspace.id);
+  const maxChartValue = Math.max(...chart, 1);
+
   return (
     <div>
       <PageHeader
         title="Analytics"
-        description="Track performance across your content and channels."
+        description={`Track ${activeWorkspace.name}'s performance across content and channels.`}
         action={
           <Select defaultValue="30d">
             <SelectTrigger className="w-40">
@@ -48,7 +53,7 @@ export default function AnalyticsPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {analyticsSummary.map((stat) => (
+        {summary.map((stat) => (
           <Card key={stat.label}>
             <CardHeader>
               <CardDescription>{stat.label}</CardDescription>
@@ -83,11 +88,11 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent className="pt-2">
             <div className="flex h-48 items-end gap-2">
-              {chartBars.map((value, idx) => (
+              {chart.map((value, idx) => (
                 <div
                   key={idx}
                   className="flex-1 rounded-t-sm bg-primary/80 transition-all hover:bg-primary"
-                  style={{ height: `${value}%` }}
+                  style={{ height: `${(value / maxChartValue) * 100}%` }}
                 />
               ))}
             </div>
@@ -100,14 +105,20 @@ export default function AnalyticsPage() {
             <CardDescription>By total reach this period</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 pt-0">
-            {topPosts.map((post) => (
-              <div key={post.id} className="flex flex-col gap-0.5">
-                <span className="truncate text-sm font-medium">{post.title}</span>
-                <span className="text-xs text-muted-foreground">
-                  {post.platform} · {post.reach} reach · {post.engagement} engagement
-                </span>
-              </div>
-            ))}
+            {topPosts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No posts published yet.
+              </p>
+            ) : (
+              topPosts.map((post) => (
+                <div key={post.id} className="flex flex-col gap-0.5">
+                  <span className="truncate text-sm font-medium">{post.title}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {post.platform} · {post.reach} reach · {post.engagement} engagement
+                  </span>
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
       </div>
@@ -133,6 +144,16 @@ export default function AnalyticsPage() {
                 <TableCell>{post.engagement}</TableCell>
               </TableRow>
             ))}
+            {topPosts.length === 0 && (
+              <TableRow>
+                <TableCell
+                  colSpan={4}
+                  className="py-10 text-center text-muted-foreground"
+                >
+                  No posts published yet in {activeWorkspace.name}.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </Card>

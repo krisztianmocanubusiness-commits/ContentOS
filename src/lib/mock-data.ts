@@ -5,9 +5,12 @@ export type Workspace = {
   initials: string;
 };
 
+// Seed workspaces. Each represents a brand/page — Keris is a personal
+// creator brand, Buildible is a B2B SaaS product, Personal is an empty
+// workspace used to demo the zero-data state.
 export const workspaces: Workspace[] = [
-  { id: "acme", name: "Acme Studio", plan: "Pro", initials: "AS" },
-  { id: "northwind", name: "Northwind Media", plan: "Team", initials: "NM" },
+  { id: "keris", name: "Keris", plan: "Pro", initials: "KE" },
+  { id: "buildible", name: "Buildible", plan: "Team", initials: "BU" },
   { id: "personal", name: "Personal", plan: "Free", initials: "P" },
 ];
 
@@ -17,59 +20,132 @@ export const currentUser = {
   initials: "KM",
 };
 
+export type Platform = "Instagram" | "TikTok" | "X" | "LinkedIn" | "YouTube";
+
 export type ContentStatus = "Draft" | "Scheduled" | "Published" | "Needs Review";
 
 export type ContentItem = {
   id: string;
+  workspaceId: string;
   title: string;
   status: ContentStatus;
-  platform: "Instagram" | "TikTok" | "X" | "LinkedIn" | "YouTube";
+  platform: Platform;
   date: string;
   author: string;
 };
 
 export const contentItems: ContentItem[] = [
-  { id: "c1", title: "Q3 product teaser carousel", status: "Scheduled", platform: "Instagram", date: "Jul 3", author: "Krisztián M." },
-  { id: "c2", title: "Behind the scenes reel", status: "Draft", platform: "TikTok", date: "Jul 4", author: "Ava R." },
-  { id: "c3", title: "Founder thread on roadmap", status: "Needs Review", platform: "X", date: "Jul 5", author: "Sam K." },
-  { id: "c4", title: "Case study: 2x retention", status: "Published", platform: "LinkedIn", date: "Jun 29", author: "Ava R." },
-  { id: "c5", title: "Tutorial: onboarding flow", status: "Scheduled", platform: "YouTube", date: "Jul 8", author: "Leo D." },
-  { id: "c6", title: "Customer spotlight story", status: "Draft", platform: "Instagram", date: "Jul 9", author: "Sam K." },
+  // Keris — personal creator brand
+  { id: "c1", workspaceId: "keris", title: "Morning routine reel", status: "Scheduled", platform: "TikTok", date: "Jul 3", author: "Krisztián M." },
+  { id: "c2", workspaceId: "keris", title: "Outfit try-on carousel", status: "Draft", platform: "Instagram", date: "Jul 4", author: "Ava R." },
+  { id: "c3", workspaceId: "keris", title: "Q&A Instagram Live recap", status: "Needs Review", platform: "Instagram", date: "Jul 6", author: "Sam K." },
+  { id: "c4", workspaceId: "keris", title: "Monthly favorites video", status: "Scheduled", platform: "YouTube", date: "Jul 10", author: "Krisztián M." },
+  { id: "c5", workspaceId: "keris", title: "Travel diary thread", status: "Published", platform: "X", date: "Jun 28", author: "Ava R." },
+
+  // Buildible — B2B SaaS product
+  { id: "c6", workspaceId: "buildible", title: "Product update: v2.4 changelog", status: "Scheduled", platform: "LinkedIn", date: "Jul 3", author: "Sam K." },
+  { id: "c7", workspaceId: "buildible", title: "Customer case study: Nova Retail", status: "Needs Review", platform: "LinkedIn", date: "Jul 7", author: "Leo D." },
+  { id: "c8", workspaceId: "buildible", title: "Feature demo: automations", status: "Draft", platform: "YouTube", date: "Jul 9", author: "Priya N." },
+  { id: "c9", workspaceId: "buildible", title: "Engineering deep dive thread", status: "Published", platform: "X", date: "Jun 30", author: "Leo D." },
+  { id: "c10", workspaceId: "buildible", title: "Integration launch announcement", status: "Scheduled", platform: "LinkedIn", date: "Jul 14", author: "Sam K." },
+
+  // Personal — intentionally empty to demo the zero-data state
 ];
 
 export type CalendarEvent = {
   id: string;
+  workspaceId: string;
   day: number;
   title: string;
   time: string;
-  platform: ContentItem["platform"];
+  platform: Platform;
 };
 
 export const calendarEvents: CalendarEvent[] = [
-  { id: "e1", day: 2, title: "Teaser carousel", time: "9:00 AM", platform: "Instagram" },
-  { id: "e2", day: 3, title: "BTS reel", time: "1:00 PM", platform: "TikTok" },
-  { id: "e3", day: 5, title: "Founder thread", time: "10:30 AM", platform: "X" },
-  { id: "e4", day: 8, title: "Tutorial video", time: "8:00 AM", platform: "YouTube" },
-  { id: "e5", day: 12, title: "Customer story", time: "3:00 PM", platform: "Instagram" },
-  { id: "e6", day: 18, title: "Roadmap update", time: "11:00 AM", platform: "LinkedIn" },
-  { id: "e7", day: 24, title: "Product demo", time: "2:00 PM", platform: "YouTube" },
+  { id: "e1", workspaceId: "keris", day: 3, title: "Morning routine reel", time: "9:00 AM", platform: "TikTok" },
+  { id: "e2", workspaceId: "keris", day: 4, title: "Outfit try-on carousel", time: "1:00 PM", platform: "Instagram" },
+  { id: "e3", workspaceId: "keris", day: 6, title: "Live Q&A recap", time: "10:30 AM", platform: "Instagram" },
+  { id: "e4", workspaceId: "keris", day: 10, title: "Monthly favorites", time: "8:00 AM", platform: "YouTube" },
+  { id: "e5", workspaceId: "keris", day: 18, title: "Summer lookbook", time: "11:00 AM", platform: "Instagram" },
+  { id: "e6", workspaceId: "keris", day: 24, title: "Studio tour vlog", time: "2:00 PM", platform: "YouTube" },
+
+  { id: "e7", workspaceId: "buildible", day: 3, title: "v2.4 changelog", time: "9:00 AM", platform: "LinkedIn" },
+  { id: "e8", workspaceId: "buildible", day: 7, title: "Nova Retail case study", time: "1:00 PM", platform: "LinkedIn" },
+  { id: "e9", workspaceId: "buildible", day: 9, title: "Automations demo", time: "10:00 AM", platform: "YouTube" },
+  { id: "e10", workspaceId: "buildible", day: 14, title: "Integration launch", time: "8:30 AM", platform: "LinkedIn" },
+  { id: "e11", workspaceId: "buildible", day: 22, title: "Roadmap AMA", time: "3:00 PM", platform: "X" },
 ];
 
-export const analyticsSummary = [
-  { label: "Total Reach", value: "482.6K", change: "+12.4%", trend: "up" as const },
-  { label: "Engagement Rate", value: "6.8%", change: "+0.6%", trend: "up" as const },
-  { label: "New Followers", value: "3,214", change: "+8.1%", trend: "up" as const },
-  { label: "Posts Published", value: "42", change: "-3.2%", trend: "down" as const },
-];
+export type AnalyticsStat = {
+  label: string;
+  value: string;
+  change: string;
+  trend: "up" | "down";
+};
 
-export const topPosts = [
-  { id: "p1", title: "Case study: 2x retention", platform: "LinkedIn", reach: "84.2K", engagement: "9.4%" },
-  { id: "p2", title: "Founder thread on roadmap", platform: "X", reach: "61.5K", engagement: "7.1%" },
-  { id: "p3", title: "Behind the scenes reel", platform: "TikTok", reach: "112.9K", engagement: "11.2%" },
-];
+export type TopPost = {
+  id: string;
+  title: string;
+  platform: Platform;
+  reach: string;
+  engagement: string;
+};
+
+type WorkspaceAnalytics = {
+  summary: AnalyticsStat[];
+  topPosts: TopPost[];
+  chart: number[];
+};
+
+const emptyAnalytics: WorkspaceAnalytics = {
+  summary: [
+    { label: "Total Reach", value: "0", change: "—", trend: "up" },
+    { label: "Engagement Rate", value: "0%", change: "—", trend: "up" },
+    { label: "New Followers", value: "0", change: "—", trend: "up" },
+    { label: "Posts Published", value: "0", change: "—", trend: "up" },
+  ],
+  topPosts: [],
+  chart: Array(12).fill(0),
+};
+
+export const analyticsByWorkspace: Record<string, WorkspaceAnalytics> = {
+  keris: {
+    summary: [
+      { label: "Total Reach", value: "612.4K", change: "+18.2%", trend: "up" },
+      { label: "Engagement Rate", value: "8.1%", change: "+1.1%", trend: "up" },
+      { label: "New Followers", value: "5,120", change: "+9.4%", trend: "up" },
+      { label: "Posts Published", value: "28", change: "+4.0%", trend: "up" },
+    ],
+    topPosts: [
+      { id: "p1", title: "Travel diary thread", platform: "X", reach: "142.8K", engagement: "12.6%" },
+      { id: "p2", title: "Monthly favorites video", platform: "YouTube", reach: "98.3K", engagement: "9.8%" },
+      { id: "p3", title: "Morning routine reel", platform: "TikTok", reach: "204.5K", engagement: "14.1%" },
+    ],
+    chart: [48, 52, 58, 55, 63, 68, 71, 75, 80, 86, 91, 97],
+  },
+  buildible: {
+    summary: [
+      { label: "Total Reach", value: "94.8K", change: "+6.3%", trend: "up" },
+      { label: "Engagement Rate", value: "4.2%", change: "-0.4%", trend: "down" },
+      { label: "New Followers", value: "812", change: "+2.1%", trend: "up" },
+      { label: "Posts Published", value: "15", change: "-1.8%", trend: "down" },
+    ],
+    topPosts: [
+      { id: "p4", title: "Customer case study: Nova Retail", platform: "LinkedIn", reach: "31.2K", engagement: "6.9%" },
+      { id: "p5", title: "Engineering deep dive thread", platform: "X", reach: "22.6K", engagement: "5.4%" },
+      { id: "p6", title: "Feature demo: automations", platform: "YouTube", reach: "18.9K", engagement: "7.2%" },
+    ],
+    chart: [35, 40, 38, 44, 41, 46, 43, 49, 45, 52, 48, 55],
+  },
+};
+
+export function analyticsForWorkspace(workspaceId: string): WorkspaceAnalytics {
+  return analyticsByWorkspace[workspaceId] ?? emptyAnalytics;
+}
 
 export type Asset = {
   id: string;
+  workspaceId: string;
   name: string;
   type: "Image" | "Video" | "Audio" | "Document";
   size: string;
@@ -78,14 +154,59 @@ export type Asset = {
 };
 
 export const assets: Asset[] = [
-  { id: "a1", name: "brand-logo-white.png", type: "Image", size: "212 KB", date: "Jun 20", usedIn: 8 },
-  { id: "a2", name: "product-launch-final.mp4", type: "Video", size: "84.1 MB", date: "Jun 24", usedIn: 3 },
-  { id: "a3", name: "voiceover-intro.wav", type: "Audio", size: "6.4 MB", date: "Jun 26", usedIn: 1 },
-  { id: "a4", name: "q3-brand-guidelines.pdf", type: "Document", size: "1.2 MB", date: "Jun 27", usedIn: 5 },
-  { id: "a5", name: "founder-headshot.jpg", type: "Image", size: "1.8 MB", date: "Jun 29", usedIn: 12 },
-  { id: "a6", name: "tutorial-b-roll.mp4", type: "Video", size: "142 MB", date: "Jul 1", usedIn: 2 },
+  { id: "a1", workspaceId: "keris", name: "morning-routine-final.mp4", type: "Video", size: "96.2 MB", date: "Jun 28", usedIn: 2 },
+  { id: "a2", workspaceId: "keris", name: "brand-moodboard.png", type: "Image", size: "3.1 MB", date: "Jun 29", usedIn: 6 },
+  { id: "a3", workspaceId: "keris", name: "podcast-intro.wav", type: "Audio", size: "4.8 MB", date: "Jun 30", usedIn: 1 },
+  { id: "a4", workspaceId: "keris", name: "media-kit-2026.pdf", type: "Document", size: "2.4 MB", date: "Jul 1", usedIn: 3 },
+
+  { id: "a5", workspaceId: "buildible", name: "product-demo-v2.mp4", type: "Video", size: "118 MB", date: "Jun 27", usedIn: 4 },
+  { id: "a6", workspaceId: "buildible", name: "case-study-nova-retail.pdf", type: "Document", size: "1.6 MB", date: "Jun 29", usedIn: 2 },
+  { id: "a7", workspaceId: "buildible", name: "logo-lockup-dark.png", type: "Image", size: "340 KB", date: "Jun 30", usedIn: 9 },
+  { id: "a8", workspaceId: "buildible", name: "founder-interview.wav", type: "Audio", size: "8.2 MB", date: "Jul 1", usedIn: 1 },
+
+  // Personal — intentionally empty
 ];
 
+export type SocialAccount = {
+  id: string;
+  workspaceId: string;
+  platform: Platform;
+  handle: string;
+  followers: string;
+  status: "Connected" | "Not Connected";
+};
+
+export const socialAccounts: SocialAccount[] = [
+  { id: "s1", workspaceId: "keris", platform: "Instagram", handle: "@keris", followers: "212K", status: "Connected" },
+  { id: "s2", workspaceId: "keris", platform: "TikTok", handle: "@keris", followers: "340K", status: "Connected" },
+  { id: "s3", workspaceId: "keris", platform: "YouTube", handle: "Keris", followers: "58K", status: "Connected" },
+  { id: "s4", workspaceId: "keris", platform: "X", handle: "@keris", followers: "12K", status: "Not Connected" },
+
+  { id: "s5", workspaceId: "buildible", platform: "LinkedIn", handle: "Buildible", followers: "8.4K", status: "Connected" },
+  { id: "s6", workspaceId: "buildible", platform: "X", handle: "@buildible", followers: "5.1K", status: "Connected" },
+  { id: "s7", workspaceId: "buildible", platform: "YouTube", handle: "Buildible", followers: "2.3K", status: "Not Connected" },
+
+  // Personal — intentionally empty
+];
+
+export function contentForWorkspace(workspaceId: string) {
+  return contentItems.filter((item) => item.workspaceId === workspaceId);
+}
+
+export function calendarEventsForWorkspace(workspaceId: string) {
+  return calendarEvents.filter((event) => event.workspaceId === workspaceId);
+}
+
+export function assetsForWorkspace(workspaceId: string) {
+  return assets.filter((asset) => asset.workspaceId === workspaceId);
+}
+
+export function socialAccountsForWorkspace(workspaceId: string) {
+  return socialAccounts.filter((account) => account.workspaceId === workspaceId);
+}
+
+// Team members are shared across the whole account, not scoped per
+// workspace/brand.
 export type TeamMember = {
   id: string;
   name: string;
@@ -97,8 +218,8 @@ export type TeamMember = {
 
 export const teamMembers: TeamMember[] = [
   { id: "t1", name: "Krisztián Mocanu", email: "krisztianmocanu.business@gmail.com", role: "Owner", status: "Active", initials: "KM" },
-  { id: "t2", name: "Ava Reyes", email: "ava@acmestudio.com", role: "Admin", status: "Active", initials: "AR" },
-  { id: "t3", name: "Sam Kim", email: "sam@acmestudio.com", role: "Editor", status: "Active", initials: "SK" },
-  { id: "t4", name: "Leo Dupont", email: "leo@acmestudio.com", role: "Editor", status: "Invited", initials: "LD" },
-  { id: "t5", name: "Priya Nair", email: "priya@acmestudio.com", role: "Viewer", status: "Active", initials: "PN" },
+  { id: "t2", name: "Ava Reyes", email: "ava@keris.co", role: "Admin", status: "Active", initials: "AR" },
+  { id: "t3", name: "Sam Kim", email: "sam@buildible.com", role: "Editor", status: "Active", initials: "SK" },
+  { id: "t4", name: "Leo Dupont", email: "leo@buildible.com", role: "Editor", status: "Invited", initials: "LD" },
+  { id: "t5", name: "Priya Nair", email: "priya@buildible.com", role: "Viewer", status: "Active", initials: "PN" },
 ];
