@@ -4,8 +4,11 @@ import * as React from "react";
 
 import { workspaces as seedWorkspaces, type Workspace } from "@/lib/mock-data";
 
-const STORAGE_KEY = "content-os:active-workspace";
+const ACTIVE_KEY = "content-os:active-workspace";
+const CUSTOM_KEY = "content-os:custom-workspaces";
 const CHANGE_EVENT = "content-os:workspace-change";
+
+const EMPTY_WORKSPACES: Workspace[] = [];
 
 type WorkspaceContextValue = {
   workspaces: Workspace[];
@@ -31,7 +34,7 @@ function initialsFromName(name: string) {
   return (words[0][0] + words[1][0]).toUpperCase();
 }
 
-function subscribeToStoredWorkspaceId(callback: () => void) {
+function subscribeToWorkspaceStore(callback: () => void) {
   window.addEventListener(CHANGE_EVENT, callback);
   window.addEventListener("storage", callback);
   return () => {
@@ -40,32 +43,68 @@ function subscribeToStoredWorkspaceId(callback: () => void) {
   };
 }
 
-function getStoredWorkspaceId() {
-  return window.localStorage.getItem(STORAGE_KEY);
+function getStoredActiveId() {
+  return window.localStorage.getItem(ACTIVE_KEY);
 }
 
-function getServerStoredWorkspaceId() {
+function getServerStoredActiveId() {
   return null;
 }
 
-function writeStoredWorkspaceId(id: string) {
-  window.localStorage.setItem(STORAGE_KEY, id);
+// useSyncExternalStore requires a stable reference when the underlying
+// value hasn't changed, so parsed JSON is cached keyed on the raw string.
+let cachedRaw: string | null = null;
+let cachedCustomWorkspaces: Workspace[] = EMPTY_WORKSPACES;
+
+function getStoredCustomWorkspaces(): Workspace[] {
+  const raw = window.localStorage.getItem(CUSTOM_KEY);
+  if (raw !== cachedRaw) {
+    cachedRaw = raw;
+    try {
+      cachedCustomWorkspaces = raw ? (JSON.parse(raw) as Workspace[]) : EMPTY_WORKSPACES;
+    } catch {
+      cachedCustomWorkspaces = EMPTY_WORKSPACES;
+    }
+  }
+  return cachedCustomWorkspaces;
+}
+
+function getServerStoredCustomWorkspaces() {
+  return EMPTY_WORKSPACES;
+}
+
+function writeActiveId(id: string) {
+  window.localStorage.setItem(ACTIVE_KEY, id);
+  window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
+function writeCustomWorkspaces(list: Workspace[]) {
+  window.localStorage.setItem(CUSTOM_KEY, JSON.stringify(list));
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
-  const [workspaces, setWorkspaces] = React.useState<Workspace[]>(seedWorkspaces);
-  const storedWorkspaceId = React.useSyncExternalStore(
-    subscribeToStoredWorkspaceId,
-    getStoredWorkspaceId,
-    getServerStoredWorkspaceId
+  const storedActiveId = React.useSyncExternalStore(
+    subscribeToWorkspaceStore,
+    getStoredActiveId,
+    getServerStoredActiveId
+  );
+  const customWorkspaces = React.useSyncExternalStore(
+    subscribeToWorkspaceStore,
+    getStoredCustomWorkspaces,
+    getServerStoredCustomWorkspaces
+  );
+
+  const workspaces = React.useMemo(
+    () => [...seedWorkspaces, ...customWorkspaces],
+    [customWorkspaces]
   );
 
   const activeWorkspace =
-    workspaces.find((w) => w.id === storedWorkspaceId) ?? workspaces[0];
+    workspaces.find((w) => w.id === storedActiveId) ?? workspaces[0];
 
   const setActiveWorkspaceId = React.useCallback((id: string) => {
-    writeStoredWorkspaceId(id);
+    writeActiveId(id);
   }, []);
 
   const createWorkspace = React.useCallback(
@@ -76,7 +115,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         plan: "Free",
         initials: initialsFromName(name),
       };
-      setWorkspaces((prev) => [...prev, workspace]);
+      writeCustomWorkspaces([...getStoredCustomWorkspaces(), workspace]);
       setActiveWorkspaceId(workspace.id);
       return workspace;
     },
