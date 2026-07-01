@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -15,7 +16,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { contentForWorkspace, type ContentStatus } from "@/lib/mock-data";
+import { ContentFilters } from "@/components/content/content-filters";
+import { ContentDetailSheet } from "@/components/content/content-detail-sheet";
+import {
+  contentItems as seedContentItems,
+  tagsForWorkspace,
+  type ContentStatus,
+  type Platform,
+} from "@/lib/mock-data";
 import { statusVariant } from "@/lib/status";
 import { useWorkspace } from "@/context/workspace-context";
 
@@ -29,7 +37,52 @@ const filters: { label: string; status: ContentStatus | "All" }[] = [
 
 export default function ContentPage() {
   const { activeWorkspace } = useWorkspace();
-  const contentItems = contentForWorkspace(activeWorkspace.id);
+  const [items, setItems] = React.useState(seedContentItems);
+  const [search, setSearch] = React.useState("");
+  const [platform, setPlatform] = React.useState<Platform | "All">("All");
+  const [activeTag, setActiveTag] = React.useState<string | null>(null);
+  const [selectedItemId, setSelectedItemId] = React.useState<string | null>(null);
+
+  const workspaceItems = items.filter(
+    (item) => item.workspaceId === activeWorkspace.id
+  );
+  const availableTags = tagsForWorkspace(activeWorkspace.id);
+
+  const filteredItems = workspaceItems.filter((item) => {
+    const query = search.trim().toLowerCase();
+    const matchesSearch =
+      query.length === 0 ||
+      item.title.toLowerCase().includes(query) ||
+      item.body.toLowerCase().includes(query);
+    const matchesPlatform = platform === "All" || item.platform === platform;
+    const matchesTag = !activeTag || item.tags.includes(activeTag);
+    return matchesSearch && matchesPlatform && matchesTag;
+  });
+
+  const selectedItem =
+    items.find((item) => item.id === selectedItemId) ?? null;
+
+  function addComment(itemId: string, body: string) {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === itemId
+          ? {
+              ...item,
+              comments: [
+                ...item.comments,
+                {
+                  id: `${itemId}-c${item.comments.length + 1}`,
+                  author: "You",
+                  authorInitials: "YO",
+                  body,
+                  timestamp: "Just now",
+                },
+              ],
+            }
+          : item
+      )
+    );
+  }
 
   return (
     <div>
@@ -44,6 +97,16 @@ export default function ContentPage() {
         }
       />
 
+      <ContentFilters
+        search={search}
+        onSearchChange={setSearch}
+        platform={platform}
+        onPlatformChange={setPlatform}
+        tags={availableTags}
+        activeTag={activeTag}
+        onTagToggle={(tag) => setActiveTag((prev) => (prev === tag ? null : tag))}
+      />
+
       <Tabs defaultValue="All" key={activeWorkspace.id}>
         <TabsList className="mb-4">
           {filters.map((filter) => (
@@ -56,8 +119,8 @@ export default function ContentPage() {
         {filters.map((filter) => {
           const rows =
             filter.status === "All"
-              ? contentItems
-              : contentItems.filter((item) => item.status === filter.status);
+              ? filteredItems
+              : filteredItems.filter((item) => item.status === filter.status);
 
           return (
             <TabsContent key={filter.status} value={filter.status}>
@@ -74,9 +137,27 @@ export default function ContentPage() {
                   </TableHeader>
                   <TableBody>
                     {rows.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="max-w-xs truncate font-medium">
-                          {item.title}
+                      <TableRow
+                        key={item.id}
+                        onClick={() => setSelectedItemId(item.id)}
+                        className="cursor-pointer"
+                      >
+                        <TableCell className="max-w-xs font-medium">
+                          <div className="flex flex-col gap-1">
+                            <span className="truncate">{item.title}</span>
+                            {item.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {item.tags.slice(0, 2).map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="text-xs font-normal text-muted-foreground"
+                                  >
+                                    #{tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {item.platform}
@@ -100,9 +181,11 @@ export default function ContentPage() {
                           colSpan={5}
                           className="py-10 text-center text-muted-foreground"
                         >
-                          {contentItems.length === 0
+                          {workspaceItems.length === 0
                             ? `No content yet in ${activeWorkspace.name}.`
-                            : "No content in this view yet."}
+                            : filteredItems.length === 0
+                              ? "No content matches your search or filters."
+                              : "No content in this view yet."}
                         </TableCell>
                       </TableRow>
                     )}
@@ -113,6 +196,15 @@ export default function ContentPage() {
           );
         })}
       </Tabs>
+
+      <ContentDetailSheet
+        item={selectedItem}
+        open={selectedItem !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedItemId(null);
+        }}
+        onAddComment={addComment}
+      />
     </div>
   );
 }

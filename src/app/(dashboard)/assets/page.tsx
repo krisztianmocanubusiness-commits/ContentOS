@@ -1,20 +1,14 @@
 "use client";
 
-import { FileText, FolderOpen, Image as ImageIcon, Music, Upload, Video } from "lucide-react";
+import { FolderOpen, Upload } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { assetsForWorkspace, type Asset } from "@/lib/mock-data";
+import { assetsForWorkspace } from "@/lib/mock-data";
+import { assetTypeIcon } from "@/lib/asset-icon";
 import { useWorkspace } from "@/context/workspace-context";
-
-const typeIcon: Record<Asset["type"], React.ElementType> = {
-  Image: ImageIcon,
-  Video: Video,
-  Audio: Music,
-  Document: FileText,
-};
 
 export default function AssetsPage() {
   const { activeWorkspace } = useWorkspace();
@@ -51,7 +45,7 @@ export default function AssetsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {assets.map((asset) => {
-            const Icon = typeIcon[asset.type];
+            const Icon = assetTypeIcon[asset.type];
             return (
               <Card key={asset.id} className="gap-0 overflow-hidden py-0">
                 <div className="flex aspect-video items-center justify-center bg-muted">

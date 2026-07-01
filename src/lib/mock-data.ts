@@ -24,6 +24,14 @@ export type Platform = "Instagram" | "TikTok" | "X" | "LinkedIn" | "YouTube";
 
 export type ContentStatus = "Draft" | "Scheduled" | "Published" | "Needs Review";
 
+export type ContentComment = {
+  id: string;
+  author: string;
+  authorInitials: string;
+  body: string;
+  timestamp: string;
+};
+
 export type ContentItem = {
   id: string;
   workspaceId: string;
@@ -32,22 +40,105 @@ export type ContentItem = {
   platform: Platform;
   date: string;
   author: string;
+  authorInitials: string;
+  /** Caption / script / post body. */
+  body: string;
+  tags: string[];
+  assetIds: string[];
+  comments: ContentComment[];
 };
 
 export const contentItems: ContentItem[] = [
   // Keris — personal creator brand
-  { id: "c1", workspaceId: "keris", title: "Morning routine reel", status: "Scheduled", platform: "TikTok", date: "Jul 3", author: "Krisztián M." },
-  { id: "c2", workspaceId: "keris", title: "Outfit try-on carousel", status: "Draft", platform: "Instagram", date: "Jul 4", author: "Ava R." },
-  { id: "c3", workspaceId: "keris", title: "Q&A Instagram Live recap", status: "Needs Review", platform: "Instagram", date: "Jul 6", author: "Sam K." },
-  { id: "c4", workspaceId: "keris", title: "Monthly favorites video", status: "Scheduled", platform: "YouTube", date: "Jul 10", author: "Krisztián M." },
-  { id: "c5", workspaceId: "keris", title: "Travel diary thread", status: "Published", platform: "X", date: "Jun 28", author: "Ava R." },
+  {
+    id: "c1", workspaceId: "keris", title: "Morning routine reel", status: "Scheduled", platform: "TikTok", date: "Jul 3",
+    author: "Krisztián M.", authorInitials: "KM",
+    body: "POV: 5am alarm hits and you still choose the sunrise walk. Full routine — cold plunge, journaling, matcha — link in bio for the journal I use.",
+    tags: ["reel", "morning-routine", "lifestyle"],
+    assetIds: ["a1"],
+    comments: [],
+  },
+  {
+    id: "c2", workspaceId: "keris", title: "Outfit try-on carousel", status: "Draft", platform: "Instagram", date: "Jul 4",
+    author: "Ava R.", authorInitials: "AR",
+    body: "5 ways to style one blazer for fall. Swipe for the thrifted vs. new breakdown 👗",
+    tags: ["ootd", "carousel", "fashion"],
+    assetIds: [],
+    comments: [
+      { id: "cm1", author: "Ava Reyes", authorInitials: "AR", body: "Can we get the studio shots re-edited with warmer tones before this goes out?", timestamp: "1d ago" },
+    ],
+  },
+  {
+    id: "c3", workspaceId: "keris", title: "Q&A Instagram Live recap", status: "Needs Review", platform: "Instagram", date: "Jul 6",
+    author: "Mila Chen", authorInitials: "MC",
+    body: "Recap carousel from last night's Live — answering your top 10 questions about the skincare routine, the move, and what's next for the podcast.",
+    tags: ["live", "qna", "community"],
+    assetIds: [],
+    comments: [
+      { id: "cm2", author: "Krisztián Mocanu", authorInitials: "KM", body: "Love this — can we swap slide 4 to lead with the podcast announcement instead?", timestamp: "3h ago" },
+      { id: "cm3", author: "Mila Chen", authorInitials: "MC", body: "Good call, updating now.", timestamp: "2h ago" },
+    ],
+  },
+  {
+    id: "c4", workspaceId: "keris", title: "Monthly favorites video", status: "Scheduled", platform: "YouTube", date: "Jul 10",
+    author: "Krisztián M.", authorInitials: "KM",
+    body: "June favorites: the skincare that finally cleared me up, a book I couldn't put down, and the gadget everyone's been asking about.",
+    tags: ["youtube", "monthly-recap"],
+    assetIds: [],
+    comments: [],
+  },
+  {
+    id: "c5", workspaceId: "keris", title: "Travel diary thread", status: "Published", platform: "X", date: "Jun 28",
+    author: "Ava R.", authorInitials: "AR",
+    body: "A thread on the 9 days in Lisbon that changed how I think about slow travel 🧵",
+    tags: ["thread", "travel"],
+    assetIds: [],
+    comments: [],
+  },
 
   // Buildible — B2B SaaS product
-  { id: "c6", workspaceId: "buildible", title: "Product update: v2.4 changelog", status: "Scheduled", platform: "LinkedIn", date: "Jul 3", author: "Sam K." },
-  { id: "c7", workspaceId: "buildible", title: "Customer case study: Nova Retail", status: "Needs Review", platform: "LinkedIn", date: "Jul 7", author: "Leo D." },
-  { id: "c8", workspaceId: "buildible", title: "Feature demo: automations", status: "Draft", platform: "YouTube", date: "Jul 9", author: "Priya N." },
-  { id: "c9", workspaceId: "buildible", title: "Engineering deep dive thread", status: "Published", platform: "X", date: "Jun 30", author: "Leo D." },
-  { id: "c10", workspaceId: "buildible", title: "Integration launch announcement", status: "Scheduled", platform: "LinkedIn", date: "Jul 14", author: "Sam K." },
+  {
+    id: "c6", workspaceId: "buildible", title: "Product update: v2.4 changelog", status: "Scheduled", platform: "LinkedIn", date: "Jul 3",
+    author: "Sam K.", authorInitials: "SK",
+    body: "v2.4 is live: workspace-level automations, faster CSV exports, and a redesigned settings panel. Full changelog in the comments.",
+    tags: ["product", "changelog", "release"],
+    assetIds: [],
+    comments: [],
+  },
+  {
+    id: "c7", workspaceId: "buildible", title: "Customer case study: Nova Retail", status: "Needs Review", platform: "LinkedIn", date: "Jul 7",
+    author: "Leo D.", authorInitials: "LD",
+    body: "How Nova Retail cut their content approval time by 60% using Buildible's workflow automations — full case study.",
+    tags: ["case-study", "customer-story"],
+    assetIds: ["a6"],
+    comments: [
+      { id: "cm4", author: "Krisztián Mocanu", authorInitials: "KM", body: "Great write-up — let's get a quote from their VP of Marketing before we publish.", timestamp: "5h ago" },
+    ],
+  },
+  {
+    id: "c8", workspaceId: "buildible", title: "Feature demo: automations", status: "Draft", platform: "YouTube", date: "Jul 9",
+    author: "Priya N.", authorInitials: "PN",
+    body: "3-minute walkthrough of the new automations builder — trigger, condition, action, done.",
+    tags: ["demo", "automations", "feature"],
+    assetIds: ["a5"],
+    comments: [],
+  },
+  {
+    id: "c9", workspaceId: "buildible", title: "Engineering deep dive thread", status: "Published", platform: "X", date: "Jun 30",
+    author: "Leo D.", authorInitials: "LD",
+    body: "How we rebuilt our webhook delivery system for 10x throughput — a thread on the architecture decisions.",
+    tags: ["engineering", "technical"],
+    assetIds: [],
+    comments: [],
+  },
+  {
+    id: "c10", workspaceId: "buildible", title: "Integration launch announcement", status: "Scheduled", platform: "LinkedIn", date: "Jul 14",
+    author: "Sam K.", authorInitials: "SK",
+    body: "Introducing native integrations with the tools you already use — Slack, Notion, and Zapier, live today.",
+    tags: ["integration", "launch", "announcement"],
+    assetIds: ["a7"],
+    comments: [],
+  },
 
   // Personal — intentionally empty to demo the zero-data state
 ];
@@ -197,12 +288,28 @@ export function contentForWorkspace(workspaceId: string) {
   return contentItems.filter((item) => item.workspaceId === workspaceId);
 }
 
+export function contentById(id: string) {
+  return contentItems.find((item) => item.id === id);
+}
+
+export function tagsForWorkspace(workspaceId: string): string[] {
+  const tags = new Set<string>();
+  for (const item of contentForWorkspace(workspaceId)) {
+    for (const tag of item.tags) tags.add(tag);
+  }
+  return Array.from(tags).sort();
+}
+
 export function calendarEventsForWorkspace(workspaceId: string) {
   return calendarEvents.filter((event) => event.workspaceId === workspaceId);
 }
 
 export function assetsForWorkspace(workspaceId: string) {
   return assets.filter((asset) => asset.workspaceId === workspaceId);
+}
+
+export function assetById(id: string) {
+  return assets.find((asset) => asset.id === id);
 }
 
 export function socialAccountsForWorkspace(workspaceId: string) {
