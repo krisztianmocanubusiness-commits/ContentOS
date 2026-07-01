@@ -1,34 +1,104 @@
 "use client";
 
+import * as React from "react";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { calendarEventsForWorkspace } from "@/lib/mock-data";
-import { platformColor } from "@/lib/platform";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MonthView } from "@/components/calendar/month-view";
+import { WeekView } from "@/components/calendar/week-view";
+import { DayView } from "@/components/calendar/day-view";
+import { EventChipContent } from "@/components/calendar/event-chip";
+import {
+  TODAY,
+  addDays,
+  addMonths,
+  formatDayLabel,
+  formatHourLabel,
+  formatMonthLabel,
+  formatWeekRangeLabel,
+  startOfWeek,
+} from "@/lib/calendar";
+import { calendarEvents as seedCalendarEvents } from "@/lib/mock-data";
 import { useWorkspace } from "@/context/workspace-context";
 
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-function buildMonthGrid(year: number, month: number) {
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cells: (number | null)[] = [
-    ...Array(firstDay).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-  ];
-  while (cells.length % 7 !== 0) cells.push(null);
-  return cells;
-}
+type CalendarViewMode = "month" | "week" | "day";
 
 export default function CalendarPage() {
   const { activeWorkspace } = useWorkspace();
-  const events = calendarEventsForWorkspace(activeWorkspace.id);
-  const year = 2026;
-  const month = 6; // July
-  const cells = buildMonthGrid(year, month);
-  const today = 1;
+  const [events, setEvents] = React.useState(seedCalendarEvents);
+  const [view, setView] = React.useState<CalendarViewMode>("month");
+  const [cursor, setCursor] = React.useState(() => new Date(TODAY));
+  const [activeEventId, setActiveEventId] = React.useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
+  );
+
+  const workspaceEvents = events.filter(
+    (event) => event.workspaceId === activeWorkspace.id
+  );
+  const activeEvent = workspaceEvents.find((e) => e.id === activeEventId) ?? null;
+
+  function goToday() {
+    setCursor(new Date(TODAY));
+  }
+
+  function goPrev() {
+    setCursor((prev) =>
+      view === "month" ? addMonths(prev, -1) : addDays(prev, view === "week" ? -7 : -1)
+    );
+  }
+
+  function goNext() {
+    setCursor((prev) =>
+      view === "month" ? addMonths(prev, 1) : addDays(prev, view === "week" ? 7 : 1)
+    );
+  }
+
+  function handleDragStart(e: DragStartEvent) {
+    setActiveEventId(String(e.active.id));
+  }
+
+  function handleDragEnd(e: DragEndEvent) {
+    setActiveEventId(null);
+    const { active, over } = e;
+    if (!over) return;
+    const overId = String(over.id);
+
+    setEvents((prev) =>
+      prev.map((event) => {
+        if (event.id !== active.id) return event;
+        if (overId.startsWith("day:")) {
+          return { ...event, date: overId.slice("day:".length) };
+        }
+        if (overId.startsWith("hour:")) {
+          const [, date, hour] = overId.split(":");
+          return { ...event, date, time: formatHourLabel(Number(hour)) };
+        }
+        return event;
+      })
+    );
+  }
+
+  const periodLabel =
+    view === "month"
+      ? formatMonthLabel(cursor)
+      : view === "week"
+        ? formatWeekRangeLabel(startOfWeek(cursor))
+        : formatDayLabel(cursor);
 
   return (
     <div>
@@ -44,68 +114,52 @@ export default function CalendarPage() {
       />
 
       <Card className="p-4">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-semibold">July 2026</h3>
-          <div className="flex items-center gap-1">
-            <Button variant="outline" size="icon" className="size-8">
-              <ChevronLeft className="size-4" />
-            </Button>
-            <Button variant="outline" size="icon" className="size-8">
-              <ChevronRight className="size-4" />
-            </Button>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <h3 className="min-w-40 text-sm font-semibold">{periodLabel}</h3>
+            <div className="flex items-center gap-1">
+              <Button variant="outline" size="icon" className="size-8" onClick={goPrev}>
+                <ChevronLeft className="size-4" />
+              </Button>
+              <Button variant="outline" size="icon" className="size-8" onClick={goNext}>
+                <ChevronRight className="size-4" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={goToday}>
+                Today
+              </Button>
+            </div>
           </div>
+
+          <Tabs value={view} onValueChange={(value) => setView(value as CalendarViewMode)}>
+            <TabsList>
+              <TabsTrigger value="month">Month</TabsTrigger>
+              <TabsTrigger value="week">Week</TabsTrigger>
+              <TabsTrigger value="day">Day</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
-        <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border border-border bg-border text-xs">
-          {WEEKDAYS.map((day) => (
-            <div
-              key={day}
-              className="bg-muted/40 px-2 py-2 text-center font-medium text-muted-foreground"
-            >
-              {day}
-            </div>
-          ))}
-          {cells.map((day, idx) => {
-            const dayEvents = events.filter((e) => e.day === day);
-            return (
-              <div
-                key={idx}
-                className="flex min-h-24 flex-col gap-1 bg-card p-1.5 sm:min-h-28"
-              >
-                {day && (
-                  <>
-                    <span
-                      className={
-                        "flex size-5 items-center justify-center rounded-full text-[11px] font-medium " +
-                        (day === today
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground")
-                      }
-                    >
-                      {day}
-                    </span>
-                    <div className="flex flex-col gap-1">
-                      {dayEvents.map((event) => (
-                        <div
-                          key={event.id}
-                          className="flex items-center gap-1.5 truncate rounded-sm bg-muted px-1.5 py-1 text-[11px] font-medium"
-                          title={`${event.title} · ${event.time}`}
-                        >
-                          <span
-                            className={`size-1.5 shrink-0 rounded-full ${
-                              platformColor[event.platform] ?? "bg-muted-foreground"
-                            }`}
-                          />
-                          <span className="truncate">{event.title}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        <DndContext
+          id="calendar-dnd"
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          {view === "month" && <MonthView cursor={cursor} events={workspaceEvents} />}
+          {view === "week" && <WeekView cursor={cursor} events={workspaceEvents} />}
+          {view === "day" && <DayView cursor={cursor} events={workspaceEvents} />}
+
+          <DragOverlay>
+            {activeEvent ? (
+              <EventChipContent
+                event={activeEvent}
+                variant={view === "month" ? "block" : "detailed"}
+                className="shadow-lg"
+              />
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       </Card>
     </div>
   );

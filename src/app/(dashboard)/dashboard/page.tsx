@@ -20,12 +20,17 @@ import {
   currentUser,
 } from "@/lib/mock-data";
 import { statusVariant } from "@/lib/status";
+import { fromISODate, TODAY, toISODate } from "@/lib/calendar";
 import { useWorkspace } from "@/context/workspace-context";
 
 export default function DashboardPage() {
   const { activeWorkspace } = useWorkspace();
   const analytics = analyticsForWorkspace(activeWorkspace.id);
-  const upcoming = calendarEventsForWorkspace(activeWorkspace.id).slice(0, 4);
+  const today = toISODate(TODAY);
+  const upcoming = calendarEventsForWorkspace(activeWorkspace.id)
+    .filter((event) => event.date >= today)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
+    .slice(0, 4);
   const recent = contentForWorkspace(activeWorkspace.id).slice(0, 5);
   const firstName = currentUser.name.split(" ")[0];
 
@@ -124,23 +129,26 @@ export default function DashboardPage() {
                 Nothing scheduled yet.
               </p>
             ) : (
-              upcoming.map((event) => (
-                <div
-                  key={event.id}
-                  className="flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/60"
-                >
-                  <div className="flex size-9 shrink-0 flex-col items-center justify-center rounded-md border border-border text-xs font-semibold leading-none">
-                    <span>Jul</span>
-                    <span>{event.day}</span>
+              upcoming.map((event) => {
+                const eventDate = fromISODate(event.date);
+                return (
+                  <div
+                    key={event.id}
+                    className="flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/60"
+                  >
+                    <div className="flex size-9 shrink-0 flex-col items-center justify-center rounded-md border border-border text-xs font-semibold leading-none">
+                      <span>{eventDate.toLocaleDateString("en-US", { month: "short" })}</span>
+                      <span>{eventDate.getDate()}</span>
+                    </div>
+                    <div className="flex min-w-0 flex-col">
+                      <span className="truncate text-sm font-medium">{event.title}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {event.time} · {event.platform}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex min-w-0 flex-col">
-                    <span className="truncate text-sm font-medium">{event.title}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {event.time} · {event.platform}
-                    </span>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </CardContent>
         </Card>
