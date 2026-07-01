@@ -1,0 +1,171 @@
+"use client";
+
+import { useTheme } from "next-themes";
+
+import { PageHeader } from "@/components/layout/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { currentUser, workspaces } from "@/lib/mock-data";
+import { useMounted } from "@/hooks/use-mounted";
+
+export default function SettingsPage() {
+  const { theme, setTheme } = useTheme();
+  const mounted = useMounted();
+
+  return (
+    <div>
+      <PageHeader title="Settings" description="Manage your account and workspace preferences." />
+
+      <Tabs defaultValue="profile">
+        <TabsList className="mb-6">
+          <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="workspace">Workspace</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="appearance">Appearance</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="profile">
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile</CardTitle>
+              <CardDescription>
+                This information will be displayed to your teammates.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-6">
+              <div className="flex items-center gap-4">
+                <Avatar className="size-14">
+                  <AvatarFallback className="bg-primary/10 text-lg text-primary">
+                    {currentUser.initials}
+                  </AvatarFallback>
+                </Avatar>
+                <Button variant="outline" size="sm">
+                  Change avatar
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="name">Full name</Label>
+                  <Input id="name" defaultValue={currentUser.name} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" defaultValue={currentUser.email} />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="justify-end border-t border-border pt-6">
+              <Button>Save changes</Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="workspace">
+          <Card>
+            <CardHeader>
+              <CardTitle>Workspace</CardTitle>
+              <CardDescription>
+                Update your workspace name and default settings.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="workspaceName">Workspace name</Label>
+                <Input id="workspaceName" defaultValue={workspaces[0].name} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="workspaceUrl">Workspace URL</Label>
+                <Input id="workspaceUrl" defaultValue="app.contentos.io/acme-studio" />
+              </div>
+            </CardContent>
+            <CardFooter className="justify-end border-t border-border pt-6">
+              <Button>Save changes</Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <Card>
+            <CardHeader>
+              <CardTitle>Notifications</CardTitle>
+              <CardDescription>
+                Choose what you want to be notified about.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col divide-y divide-border">
+              {[
+                {
+                  title: "Content approvals",
+                  description: "When a draft needs your review",
+                },
+                {
+                  title: "Scheduled posts",
+                  description: "Reminders before a post goes live",
+                },
+                {
+                  title: "Team activity",
+                  description: "When teammates comment or make changes",
+                },
+                {
+                  title: "Weekly summary",
+                  description: "A digest of performance every Monday",
+                },
+              ].map((item, idx) => (
+                <div key={item.title} className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{item.title}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {item.description}
+                    </span>
+                  </div>
+                  <Switch defaultChecked={idx !== 2} />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="appearance">
+          <Card>
+            <CardHeader>
+              <CardTitle>Appearance</CardTitle>
+              <CardDescription>Customize how Content OS looks on your device.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              {(["light", "dark", "system"] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setTheme(option)}
+                  className={
+                    "flex items-center justify-between rounded-lg border px-4 py-3 text-left text-sm capitalize transition-colors " +
+                    (mounted && theme === option
+                      ? "border-primary bg-accent"
+                      : "border-border hover:bg-accent/50")
+                  }
+                >
+                  {option}
+                  {mounted && theme === option && (
+                    <span className="text-xs text-muted-foreground">Active</span>
+                  )}
+                </button>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
