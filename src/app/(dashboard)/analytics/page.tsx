@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -25,13 +26,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { analyticsForWorkspace } from "@/lib/mock-data";
+import { ReachChart } from "@/components/analytics/reach-chart";
+import { PlatformBreakdown } from "@/components/analytics/platform-breakdown";
+import {
+  ANALYTICS_RANGES,
+  analyticsForWorkspace,
+  type AnalyticsRange,
+} from "@/lib/mock-data";
 import { useWorkspace } from "@/context/workspace-context";
 
 export default function AnalyticsPage() {
   const { activeWorkspace } = useWorkspace();
-  const { summary, topPosts, chart } = analyticsForWorkspace(activeWorkspace.id);
-  const maxChartValue = Math.max(...chart, 1);
+  const [range, setRange] = React.useState<AnalyticsRange>("30d");
+  const { summary, chart, platformBreakdown, topPosts } = analyticsForWorkspace(
+    activeWorkspace.id,
+    range
+  );
+  const rangeLabel = ANALYTICS_RANGES.find((r) => r.value === range)?.label ?? "";
 
   return (
     <div>
@@ -39,14 +50,16 @@ export default function AnalyticsPage() {
         title="Analytics"
         description={`Track ${activeWorkspace.name}'s performance across content and channels.`}
         action={
-          <Select defaultValue="30d">
+          <Select value={range} onValueChange={(value) => setRange(value as AnalyticsRange)}>
             <SelectTrigger className="w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="90d">Last 90 days</SelectItem>
+              {ANALYTICS_RANGES.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         }
@@ -84,40 +97,31 @@ export default function AnalyticsPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Reach over time</CardTitle>
-            <CardDescription>Last 12 weeks</CardDescription>
+            <CardDescription>{rangeLabel}</CardDescription>
           </CardHeader>
           <CardContent className="pt-2">
-            <div className="flex h-48 items-end gap-2">
-              {chart.map((value, idx) => (
-                <div
-                  key={idx}
-                  className="flex-1 rounded-t-sm bg-primary/80 transition-all hover:bg-primary"
-                  style={{ height: `${(value / maxChartValue) * 100}%` }}
-                />
-              ))}
-            </div>
+            {chart.length === 0 ? (
+              <p className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+                No data yet for this period.
+              </p>
+            ) : (
+              <ReachChart data={chart} />
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Top posts</CardTitle>
-            <CardDescription>By total reach this period</CardDescription>
+            <CardTitle>Reach by platform</CardTitle>
+            <CardDescription>{rangeLabel}</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-3 pt-0">
-            {topPosts.length === 0 ? (
+          <CardContent className="pt-0">
+            {platformBreakdown.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No posts published yet.
+                No connected accounts with data yet.
               </p>
             ) : (
-              topPosts.map((post) => (
-                <div key={post.id} className="flex flex-col gap-0.5">
-                  <span className="truncate text-sm font-medium">{post.title}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {post.platform} · {post.reach} reach · {post.engagement} engagement
-                  </span>
-                </div>
-              ))
+              <PlatformBreakdown data={platformBreakdown} />
             )}
           </CardContent>
         </Card>
@@ -127,7 +131,7 @@ export default function AnalyticsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Post</TableHead>
+              <TableHead>Top posts</TableHead>
               <TableHead>Platform</TableHead>
               <TableHead>Reach</TableHead>
               <TableHead>Engagement</TableHead>
