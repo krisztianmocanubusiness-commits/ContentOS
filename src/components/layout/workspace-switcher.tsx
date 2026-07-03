@@ -31,11 +31,11 @@ export function WorkspaceSwitcher() {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [name, setName] = React.useState("");
 
-  function handleCreate(e: React.FormEvent) {
+  async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
-    createWorkspace(trimmed);
+    await createWorkspace(trimmed);
     setName("");
     setDialogOpen(false);
   }

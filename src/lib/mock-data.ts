@@ -5,14 +5,9 @@ export type Workspace = {
   initials: string;
 };
 
-// Seed workspaces. Each represents a brand/page — Keris is a personal
-// creator brand, Buildible is a B2B SaaS product, Personal is an empty
-// workspace used to demo the zero-data state.
-export const workspaces: Workspace[] = [
-  { id: "keris", name: "Keris", plan: "Pro", initials: "KE" },
-  { id: "buildible", name: "Buildible", plan: "Team", initials: "BU" },
-  { id: "personal", name: "Personal", plan: "Free", initials: "P" },
-];
+// Workspace records now come from the database (see prisma/seed.ts for
+// the equivalent seed data) via WorkspaceProvider — this file only keeps
+// the Workspace type, which everything below still keys off of.
 
 export type Platform = "Instagram" | "TikTok" | "X" | "LinkedIn" | "YouTube";
 
@@ -502,16 +497,16 @@ export type TeamMember = {
 };
 
 export const teamMembers: TeamMember[] = [
-  { id: "t1", workspaceId: "keris", name: "Krisztián Mocanu", email: "krisztianmocanu.business@gmail.com", role: "Owner", status: "Active", initials: "KM" },
+  { id: "t1", workspaceId: "keris", name: "Krisztián Mocanu", email: "demo@contentos.dev", role: "Owner", status: "Active", initials: "KM" },
   { id: "t2", workspaceId: "keris", name: "Ava Reyes", email: "ava@keris.co", role: "Admin", status: "Active", initials: "AR" },
   { id: "t3", workspaceId: "keris", name: "Mila Chen", email: "mila@keris.co", role: "Editor", status: "Active", initials: "MC" },
 
-  { id: "t4", workspaceId: "buildible", name: "Krisztián Mocanu", email: "krisztianmocanu.business@gmail.com", role: "Owner", status: "Active", initials: "KM" },
+  { id: "t4", workspaceId: "buildible", name: "Krisztián Mocanu", email: "demo@contentos.dev", role: "Owner", status: "Active", initials: "KM" },
   { id: "t5", workspaceId: "buildible", name: "Sam Kim", email: "sam@buildible.com", role: "Editor", status: "Active", initials: "SK" },
   { id: "t6", workspaceId: "buildible", name: "Leo Dupont", email: "leo@buildible.com", role: "Editor", status: "Invited", initials: "LD" },
   { id: "t7", workspaceId: "buildible", name: "Priya Nair", email: "priya@buildible.com", role: "Viewer", status: "Active", initials: "PN" },
 
-  { id: "t8", workspaceId: "personal", name: "Krisztián Mocanu", email: "krisztianmocanu.business@gmail.com", role: "Owner", status: "Active", initials: "KM" },
+  { id: "t8", workspaceId: "personal", name: "Krisztián Mocanu", email: "demo@contentos.dev", role: "Owner", status: "Active", initials: "KM" },
 ];
 
 export function teamMembersForWorkspace(workspaceId: string) {

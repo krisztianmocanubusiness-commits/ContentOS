@@ -3,6 +3,12 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rate-limit";
+
+// Compared against when no user is found, so a nonexistent email takes
+// roughly the same time as a wrong password — otherwise response time
+// leaks whether an email is registered.
+const DUMMY_HASH = bcrypt.hashSync("not-a-real-password", 10);
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
@@ -18,11 +24,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const password = typeof credentials?.password === "string" ? credentials.password : undefined;
         if (!email || !password) return null;
 
-        const user = await prisma.user.findUnique({ where: { email } });
-        if (!user) return null;
+        if (!rateLimit(`login:${email.toLowerCase()}`, 8, 15 * 60 * 1000)) {
+          return null;
+        }
 
-        const valid = await bcrypt.compare(password, user.passwordHash);
-        if (!valid) return null;
+        const user = await prisma.user.findUnique({ where: { email } });
+        const valid = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH);
+        if (!user || !valid) return null;
 
         return { id: user.id, name: user.name, email: user.email, initials: user.initials };
       },

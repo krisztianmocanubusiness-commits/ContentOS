@@ -45,7 +45,7 @@ async function main() {
   const placeholderPassword = await passwordHash("contentos-teammate");
 
   const users = [
-    { id: "u-krisztian", name: "Krisztián Mocanu", email: "krisztianmocanu.business@gmail.com", initials: "KM", passwordHash: await passwordHash("contentos123") },
+    { id: "u-krisztian", name: "Krisztián Mocanu", email: "demo@contentos.dev", initials: "KM", passwordHash: await passwordHash("ContentOS-Demo-2026") },
     { id: "u-ava", name: "Ava Reyes", email: "ava@keris.co", initials: "AR", passwordHash: placeholderPassword },
     { id: "u-mila", name: "Mila Chen", email: "mila@keris.co", initials: "MC", passwordHash: placeholderPassword },
     { id: "u-sam", name: "Sam Kim", email: "sam@buildible.com", initials: "SK", passwordHash: placeholderPassword },

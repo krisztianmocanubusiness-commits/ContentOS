@@ -25,6 +25,7 @@ import {
   type Platform,
   type ReviewAction,
 } from "@/lib/mock-data";
+import { applyReviewAction } from "@/lib/review";
 import { statusVariant } from "@/lib/status";
 import { useWorkspace } from "@/context/workspace-context";
 
@@ -85,45 +86,26 @@ export default function ContentPage() {
     );
   }
 
-  function logReviewEvent(
-    itemId: string,
-    action: ReviewAction,
-    nextStatus: ContentStatus,
-    note?: string
-  ) {
+  function logReviewEvent(itemId: string, action: ReviewAction, note?: string) {
     setItems((prev) =>
       prev.map((item) =>
         item.id === itemId
-          ? {
-              ...item,
-              status: nextStatus,
-              reviewHistory: [
-                ...item.reviewHistory,
-                {
-                  id: `${itemId}-rv${item.reviewHistory.length + 1}`,
-                  action,
-                  by: "You",
-                  byInitials: "YO",
-                  timestamp: "Just now",
-                  note,
-                },
-              ],
-            }
+          ? applyReviewAction(item, action, { name: "You", initials: "YO" }, { note })
           : item
       )
     );
   }
 
   function submitForReview(itemId: string) {
-    logReviewEvent(itemId, "submitted", "Needs Review");
+    logReviewEvent(itemId, "submitted");
   }
 
   function approveItem(itemId: string) {
-    logReviewEvent(itemId, "approved", "Scheduled");
+    logReviewEvent(itemId, "approved");
   }
 
   function requestChanges(itemId: string, reason: string) {
-    logReviewEvent(itemId, "changes_requested", "Draft", reason);
+    logReviewEvent(itemId, "changes_requested", reason);
   }
 
   return (

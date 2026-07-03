@@ -118,6 +118,7 @@ model WorkspaceMembership {
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([userId, workspaceId])
+  @@index([workspaceId])
 }
 
 model ContentItem {
@@ -137,6 +138,8 @@ model ContentItem {
   assets       Asset[]
   comments     ContentComment[]
   reviewEvents ReviewEvent[]
+
+  @@index([workspaceId])
 }
 
 model ContentComment {
@@ -148,6 +151,8 @@ model ContentComment {
   createdAt      DateTime @default(now())
 
   contentItem ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+
+  @@index([contentItemId])
 }
 
 model ReviewEvent {
@@ -160,6 +165,8 @@ model ReviewEvent {
   createdAt     DateTime     @default(now())
 
   contentItem ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+
+  @@index([contentItemId])
 }
 
 model CalendarEvent {
@@ -170,6 +177,8 @@ model CalendarEvent {
   platform    Platform
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
 }
 
 model Asset {
@@ -184,6 +193,8 @@ model Asset {
 
   workspace Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   content   ContentItem[]
+
+  @@index([workspaceId])
 }
 
 model SocialAccount {
@@ -197,6 +208,8 @@ model SocialAccount {
   lastSyncedAt   DateTime?
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
 }
 
 model Conversation {
@@ -210,6 +223,8 @@ model Conversation {
 
   workspace Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   messages  InboxMessage[]
+
+  @@index([workspaceId])
 }
 
 model InboxMessage {
@@ -220,6 +235,8 @@ model InboxMessage {
   createdAt      DateTime      @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
 }
 
 model Deal {
@@ -232,4 +249,6 @@ model Deal {
   dueDate     DateTime
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
 }

@@ -2,23 +2,24 @@
 
 import * as React from "react";
 
-import { workspaces as seedWorkspaces, type TeamRole, type Workspace } from "@/lib/mock-data";
+import type { TeamRole, Workspace } from "@/lib/mock-data";
 
 const ACTIVE_KEY = "content-os:active-workspace";
-const CUSTOM_KEY = "content-os:custom-workspaces";
 const CHANGE_EVENT = "content-os:workspace-change";
 
-const EMPTY_WORKSPACES: Workspace[] = [];
+type Membership = Workspace & { role: TeamRole };
 
 type WorkspaceContextValue = {
   workspaces: Workspace[];
   activeWorkspace: Workspace;
   setActiveWorkspaceId: (id: string) => void;
-  createWorkspace: (name: string) => Workspace;
+  createWorkspace: (name: string) => Promise<Workspace>;
   /**
-   * The signed-in user is always the Owner in the mock data, so this lets
-   * the app preview how the UI gates itself for other roles — a demo/QA
-   * aid, not a real permission change. Resets on reload.
+   * Defaults to the caller's real role for the active workspace (from
+   * WorkspaceMembership). Overriding it here only changes what the UI
+   * *shows* — a demo/QA aid for previewing permission gating, not a real
+   * permission change. The override is scoped to the workspace it was
+   * set for, so switching workspaces falls back to the real role again.
    */
   currentRole: TeamRole;
   setCurrentRole: (role: TeamRole) => void;
@@ -26,22 +27,7 @@ type WorkspaceContextValue = {
 
 const WorkspaceContext = React.createContext<WorkspaceContextValue | null>(null);
 
-function slugify(name: string) {
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
-function initialsFromName(name: string) {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "WS";
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return (words[0][0] + words[1][0]).toUpperCase();
-}
-
-function subscribeToWorkspaceStore(callback: () => void) {
+function subscribeToActiveId(callback: () => void) {
   window.addEventListener(CHANGE_EVENT, callback);
   window.addEventListener("storage", callback);
   return () => {
@@ -58,76 +44,113 @@ function getServerStoredActiveId() {
   return null;
 }
 
-// useSyncExternalStore requires a stable reference when the underlying
-// value hasn't changed, so parsed JSON is cached keyed on the raw string.
-let cachedRaw: string | null = null;
-let cachedCustomWorkspaces: Workspace[] = EMPTY_WORKSPACES;
-
-function getStoredCustomWorkspaces(): Workspace[] {
-  const raw = window.localStorage.getItem(CUSTOM_KEY);
-  if (raw !== cachedRaw) {
-    cachedRaw = raw;
-    try {
-      cachedCustomWorkspaces = raw ? (JSON.parse(raw) as Workspace[]) : EMPTY_WORKSPACES;
-    } catch {
-      cachedCustomWorkspaces = EMPTY_WORKSPACES;
-    }
-  }
-  return cachedCustomWorkspaces;
-}
-
-function getServerStoredCustomWorkspaces() {
-  return EMPTY_WORKSPACES;
-}
-
 function writeActiveId(id: string) {
   window.localStorage.setItem(ACTIVE_KEY, id);
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 
-function writeCustomWorkspaces(list: Workspace[]) {
-  window.localStorage.setItem(CUSTOM_KEY, JSON.stringify(list));
-  window.dispatchEvent(new Event(CHANGE_EVENT));
+/**
+ * Fetches the signed-in user's real workspaces from the database and
+ * only renders `children` once that's known — every workspace a user can
+ * see and act in comes from their actual WorkspaceMembership rows now,
+ * not a static list every signed-in session used to share.
+ */
+export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
+  const [memberships, setMemberships] = React.useState<Membership[] | null>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch("/api/workspaces")
+      .then((res) => (res.ok ? res.json() : { workspaces: [] }))
+      .then((data: { workspaces: Membership[] }) => {
+        if (!cancelled) setMemberships(data.workspaces ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setMemberships([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (memberships === null) {
+    return (
+      <div className="flex h-dvh items-center justify-center bg-background text-sm text-muted-foreground">
+        Loading your workspaces…
+      </div>
+    );
+  }
+
+  if (memberships.length === 0) {
+    return (
+      <div className="flex h-dvh flex-col items-center justify-center gap-2 bg-background text-center">
+        <p className="text-sm font-medium">No workspaces yet</p>
+        <p className="text-sm text-muted-foreground">
+          Your account isn&apos;t a member of any workspace.
+        </p>
+      </div>
+    );
+  }
+
+  return <WorkspaceProviderReady memberships={memberships} onCreated={(w) => setMemberships((prev) => [...(prev ?? []), w])}>{children}</WorkspaceProviderReady>;
 }
 
-export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
-  const [currentRole, setCurrentRole] = React.useState<TeamRole>("Owner");
+function WorkspaceProviderReady({
+  memberships,
+  onCreated,
+  children,
+}: {
+  memberships: Membership[];
+  onCreated: (membership: Membership) => void;
+  children: React.ReactNode;
+}) {
+  const [roleOverride, setRoleOverride] = React.useState<{ workspaceId: string; role: TeamRole } | null>(null);
   const storedActiveId = React.useSyncExternalStore(
-    subscribeToWorkspaceStore,
+    subscribeToActiveId,
     getStoredActiveId,
     getServerStoredActiveId
   );
-  const customWorkspaces = React.useSyncExternalStore(
-    subscribeToWorkspaceStore,
-    getStoredCustomWorkspaces,
-    getServerStoredCustomWorkspaces
+
+  const workspaces = React.useMemo<Workspace[]>(
+    () =>
+      memberships.map((m) => ({ id: m.id, name: m.name, plan: m.plan, initials: m.initials })),
+    [memberships]
   );
 
-  const workspaces = React.useMemo(
-    () => [...seedWorkspaces, ...customWorkspaces],
-    [customWorkspaces]
-  );
+  const activeMembership =
+    memberships.find((m) => m.id === storedActiveId) ?? memberships[0];
+  const activeWorkspace: Workspace = activeMembership;
 
-  const activeWorkspace =
-    workspaces.find((w) => w.id === storedActiveId) ?? workspaces[0];
+  const currentRole =
+    roleOverride?.workspaceId === activeWorkspace.id
+      ? roleOverride.role
+      : activeMembership.role;
 
   const setActiveWorkspaceId = React.useCallback((id: string) => {
     writeActiveId(id);
   }, []);
 
+  const setCurrentRole = React.useCallback(
+    (role: TeamRole) => {
+      setRoleOverride({ workspaceId: activeWorkspace.id, role });
+    },
+    [activeWorkspace.id]
+  );
+
   const createWorkspace = React.useCallback(
-    (name: string) => {
-      const workspace: Workspace = {
-        id: `${slugify(name) || "workspace"}-${Date.now().toString(36)}`,
-        name,
-        plan: "Free",
-        initials: initialsFromName(name),
-      };
-      writeCustomWorkspaces([...getStoredCustomWorkspaces(), workspace]);
+    async (name: string) => {
+      const res = await fetch("/api/workspaces", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (!res.ok) throw new Error("Failed to create workspace");
+      const { workspace } = (await res.json()) as { workspace: Membership };
+      onCreated(workspace);
       setActiveWorkspaceId(workspace.id);
       return workspace;
     },
-    [setActiveWorkspaceId]
+    [onCreated, setActiveWorkspaceId]
   );
 
   const value = React.useMemo(
@@ -139,7 +162,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       currentRole,
       setCurrentRole,
     }),
-    [workspaces, activeWorkspace, setActiveWorkspaceId, createWorkspace, currentRole]
+    [workspaces, activeWorkspace, setActiveWorkspaceId, createWorkspace, currentRole, setCurrentRole]
   );
 
   return (

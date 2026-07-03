@@ -28,8 +28,10 @@ Authentication and the underlying data model are backed by a real PostgreSQL dat
 
 Open [http://localhost:3000](http://localhost:3000) — you'll land on the login page. The seed script creates a real account you can sign in with:
 
-- Email: `krisztianmocanu.business@gmail.com`
-- Password: `contentos123`
+- Email: `demo@contentos.dev`
+- Password: `ContentOS-Demo-2026`
+
+This is a seed-only demo account for local development — rotate or remove it before this repository is ever public, and never reuse this password anywhere real.
 
 Or use "Sign up" to create a new account and workspace from scratch.
 

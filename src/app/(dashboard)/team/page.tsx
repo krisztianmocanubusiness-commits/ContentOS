@@ -43,6 +43,7 @@ import {
 import { ROLE_DESCRIPTIONS, ROLES } from "@/lib/permissions";
 import { usePermission } from "@/hooks/use-permission";
 import { useWorkspace } from "@/context/workspace-context";
+import { initialsFromName } from "@/lib/naming";
 
 function nameFromEmail(email: string): string {
   const local = email.split("@")[0] ?? email;
@@ -51,13 +52,6 @@ function nameFromEmail(email: string): string {
   return words
     .map((w) => w[0].toUpperCase() + w.slice(1))
     .join(" ");
-}
-
-function initialsFromName(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "IN";
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return (words[0][0] + words[1][0]).toUpperCase();
 }
 
 export default function TeamPage() {
