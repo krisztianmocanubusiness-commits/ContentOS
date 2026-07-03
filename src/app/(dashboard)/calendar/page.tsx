@@ -21,6 +21,8 @@ import { MonthView } from "@/components/calendar/month-view";
 import { WeekView } from "@/components/calendar/week-view";
 import { DayView } from "@/components/calendar/day-view";
 import { EventChipContent } from "@/components/calendar/event-chip";
+import { EventDetailSheet } from "@/components/calendar/event-detail-sheet";
+import { DayAgendaSheet } from "@/components/calendar/day-agenda-sheet";
 import { PermissionButton } from "@/components/permissions/permission-button";
 import {
   TODAY,
@@ -31,9 +33,11 @@ import {
   formatMonthLabel,
   formatWeekRangeLabel,
   startOfWeek,
+  toISODate,
 } from "@/lib/calendar";
 import { calendarEvents as seedCalendarEvents } from "@/lib/mock-data";
 import { usePermission } from "@/hooks/use-permission";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useWorkspace } from "@/context/workspace-context";
 
 type CalendarViewMode = "month" | "week" | "day";
@@ -41,10 +45,18 @@ type CalendarViewMode = "month" | "week" | "day";
 export default function CalendarPage() {
   const { activeWorkspace } = useWorkspace();
   const canPublish = usePermission("publishContent");
+  const isMobile = useIsMobile();
   const [events, setEvents] = React.useState(seedCalendarEvents);
-  const [view, setView] = React.useState<CalendarViewMode>("month");
+  const [view, setView] = React.useState<CalendarViewMode | null>(null);
   const [cursor, setCursor] = React.useState(() => new Date(TODAY));
   const [activeEventId, setActiveEventId] = React.useState<string | null>(null);
+  const [selectedEventId, setSelectedEventId] = React.useState<string | null>(null);
+  const [agendaDate, setAgendaDate] = React.useState<Date | null>(null);
+
+  // No explicit choice yet -> default to the view that actually works at
+  // this width (Day is the only one that's legible on a phone).
+  const effectiveView: CalendarViewMode = view ?? (isMobile ? "day" : "month");
+  const canDrag = canPublish && !isMobile;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
@@ -54,6 +66,12 @@ export default function CalendarPage() {
     (event) => event.workspaceId === activeWorkspace.id
   );
   const activeEvent = workspaceEvents.find((e) => e.id === activeEventId) ?? null;
+  const selectedEvent = workspaceEvents.find((e) => e.id === selectedEventId) ?? null;
+  const agendaEvents = agendaDate
+    ? workspaceEvents
+        .filter((event) => event.date === toISODate(agendaDate))
+        .sort((a, b) => a.time.localeCompare(b.time))
+    : [];
 
   function goToday() {
     setCursor(new Date(TODAY));
@@ -61,13 +79,23 @@ export default function CalendarPage() {
 
   function goPrev() {
     setCursor((prev) =>
-      view === "month" ? addMonths(prev, -1) : addDays(prev, view === "week" ? -7 : -1)
+      effectiveView === "month"
+        ? addMonths(prev, -1)
+        : addDays(prev, effectiveView === "week" ? -7 : -1)
     );
   }
 
   function goNext() {
     setCursor((prev) =>
-      view === "month" ? addMonths(prev, 1) : addDays(prev, view === "week" ? 7 : 1)
+      effectiveView === "month"
+        ? addMonths(prev, 1)
+        : addDays(prev, effectiveView === "week" ? 7 : 1)
+    );
+  }
+
+  function rescheduleEvent(eventId: string, date: string, time: string) {
+    setEvents((prev) =>
+      prev.map((event) => (event.id === eventId ? { ...event, date, time } : event))
     );
   }
 
@@ -81,25 +109,19 @@ export default function CalendarPage() {
     if (!over) return;
     const overId = String(over.id);
 
-    setEvents((prev) =>
-      prev.map((event) => {
-        if (event.id !== active.id) return event;
-        if (overId.startsWith("day:")) {
-          return { ...event, date: overId.slice("day:".length) };
-        }
-        if (overId.startsWith("hour:")) {
-          const [, date, hour] = overId.split(":");
-          return { ...event, date, time: formatHourLabel(Number(hour)) };
-        }
-        return event;
-      })
-    );
+    if (overId.startsWith("day:")) {
+      const event = workspaceEvents.find((ev) => ev.id === active.id);
+      if (event) rescheduleEvent(event.id, overId.slice("day:".length), event.time);
+    } else if (overId.startsWith("hour:")) {
+      const [, date, hour] = overId.split(":");
+      rescheduleEvent(String(active.id), date, formatHourLabel(Number(hour)));
+    }
   }
 
   const periodLabel =
-    view === "month"
+    effectiveView === "month"
       ? formatMonthLabel(cursor)
-      : view === "week"
+      : effectiveView === "week"
         ? formatWeekRangeLabel(startOfWeek(cursor))
         : formatDayLabel(cursor);
 
@@ -121,10 +143,10 @@ export default function CalendarPage() {
           <div className="flex items-center gap-2">
             <h3 className="min-w-40 text-sm font-semibold">{periodLabel}</h3>
             <div className="flex items-center gap-1">
-              <Button variant="outline" size="icon" className="size-8" onClick={goPrev}>
+              <Button variant="outline" size="icon" className="size-9 sm:size-8" onClick={goPrev}>
                 <ChevronLeft className="size-4" />
               </Button>
-              <Button variant="outline" size="icon" className="size-8" onClick={goNext}>
+              <Button variant="outline" size="icon" className="size-9 sm:size-8" onClick={goNext}>
                 <ChevronRight className="size-4" />
               </Button>
               <Button variant="outline" size="sm" onClick={goToday}>
@@ -133,7 +155,10 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          <Tabs value={view} onValueChange={(value) => setView(value as CalendarViewMode)}>
+          <Tabs
+            value={effectiveView}
+            onValueChange={(value) => setView(value as CalendarViewMode)}
+          >
             <TabsList>
               <TabsTrigger value="month">Month</TabsTrigger>
               <TabsTrigger value="week">Week</TabsTrigger>
@@ -149,27 +174,66 @@ export default function CalendarPage() {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          {view === "month" && (
-            <MonthView cursor={cursor} events={workspaceEvents} draggable={canPublish} />
+          {effectiveView === "month" && (
+            <MonthView
+              cursor={cursor}
+              events={workspaceEvents}
+              draggable={canDrag}
+              onSelectEvent={setSelectedEventId}
+              onSelectDay={setAgendaDate}
+            />
           )}
-          {view === "week" && (
-            <WeekView cursor={cursor} events={workspaceEvents} draggable={canPublish} />
+          {effectiveView === "week" && (
+            <WeekView
+              cursor={cursor}
+              events={workspaceEvents}
+              draggable={canDrag}
+              onSelectEvent={setSelectedEventId}
+            />
           )}
-          {view === "day" && (
-            <DayView cursor={cursor} events={workspaceEvents} draggable={canPublish} />
+          {effectiveView === "day" && (
+            <DayView
+              cursor={cursor}
+              events={workspaceEvents}
+              draggable={canDrag}
+              onSelectEvent={setSelectedEventId}
+            />
           )}
 
           <DragOverlay>
             {activeEvent ? (
               <EventChipContent
                 event={activeEvent}
-                variant={view === "month" ? "block" : "detailed"}
+                variant={effectiveView === "month" ? "block" : "detailed"}
                 className="shadow-lg"
               />
             ) : null}
           </DragOverlay>
         </DndContext>
       </Card>
+
+      <EventDetailSheet
+        event={selectedEvent}
+        open={selectedEvent !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedEventId(null);
+        }}
+        onReschedule={rescheduleEvent}
+        canReschedule={canPublish}
+      />
+
+      <DayAgendaSheet
+        date={agendaDate}
+        events={agendaEvents}
+        open={agendaDate !== null}
+        onOpenChange={(open) => {
+          if (!open) setAgendaDate(null);
+        }}
+        onSelectEvent={(eventId) => {
+          setAgendaDate(null);
+          setSelectedEventId(eventId);
+        }}
+      />
     </div>
   );
 }

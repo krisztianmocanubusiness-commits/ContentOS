@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
+import { BottomNav } from "@/components/layout/bottom-nav";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
@@ -9,11 +10,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
           <div className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8 md:py-8">
             {children}
           </div>
         </main>
+        <BottomNav />
       </div>
     </div>
   );

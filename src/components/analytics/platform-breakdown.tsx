@@ -18,11 +18,12 @@ export function PlatformBreakdown({ data }: { data: PlatformReach[] }) {
         <button
           key={row.platform}
           type="button"
-          className="flex w-full items-center gap-3 text-left"
+          className="flex w-full items-center gap-3 py-1 text-left"
           onMouseEnter={() => setActiveIndex(i)}
           onMouseLeave={() => setActiveIndex(null)}
           onFocus={() => setActiveIndex(i)}
           onBlur={() => setActiveIndex(null)}
+          onClick={() => setActiveIndex((prev) => (prev === i ? null : i))}
           aria-label={`${row.platform}: ${formatReachK(row.value)} reach`}
         >
           <span className="w-16 shrink-0 truncate text-xs font-medium text-muted-foreground">

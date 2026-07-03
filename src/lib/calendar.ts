@@ -62,6 +62,24 @@ export function formatHourLabel(hour: number): string {
   return `${displayHour}:00 ${period}`;
 }
 
+/** "7:30 AM" -> "07:30", the value an <input type="time"> expects. */
+export function timeLabelToInputValue(time: string): string {
+  const match = time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!match) return "09:00";
+  let hour = Number(match[1]) % 12;
+  if (match[3].toUpperCase() === "PM") hour += 12;
+  return `${String(hour).padStart(2, "0")}:${match[2]}`;
+}
+
+/** "07:30" (from <input type="time">) -> "7:30 AM". */
+export function inputValueToTimeLabel(value: string): string {
+  const [hourStr, minute] = value.split(":");
+  const hour24 = Number(hourStr);
+  const period = hour24 >= 12 ? "PM" : "AM";
+  const hour = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  return `${hour}:${minute} ${period}`;
+}
+
 export function formatMonthLabel(date: Date): string {
   return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }

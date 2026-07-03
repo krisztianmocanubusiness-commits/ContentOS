@@ -28,7 +28,7 @@ export function NavLinks({
             href={item.href}
             onClick={onNavigate}
             className={cn(
-              "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors",
+              "flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm font-medium transition-colors md:py-1.5",
               isActive
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"

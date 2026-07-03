@@ -15,10 +15,12 @@ export function DayView({
   cursor,
   events,
   draggable = true,
+  onSelectEvent,
 }: {
   cursor: Date;
   events: CalendarEvent[];
   draggable?: boolean;
+  onSelectEvent?: (eventId: string) => void;
 }) {
   const iso = toISODate(cursor);
   const dayEvents = events.filter((event) => event.date === iso);
@@ -45,7 +47,13 @@ export function DayView({
             </div>
             <div className="flex flex-1 flex-wrap items-center gap-2 py-2 pr-3">
               {hourEvents.map((event) => (
-                <EventChip key={event.id} event={event} variant="detailed" draggable={draggable} />
+                <EventChip
+                  key={event.id}
+                  event={event}
+                  variant="detailed"
+                  draggable={draggable}
+                  onSelect={() => onSelectEvent?.(event.id)}
+                />
               ))}
             </div>
           </DroppableSlot>

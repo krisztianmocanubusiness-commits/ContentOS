@@ -33,3 +33,16 @@ export const navItems: NavItem[] = [
 export const bottomNavItems: NavItem[] = [
   { title: "Settings", href: "/settings", icon: Settings },
 ];
+
+// The mobile bottom tab bar only has room for a few destinations — these
+// are the ones used often enough to earn a permanent thumb-reachable slot.
+// Everything else in navItems shows up in the bottom bar's "More" sheet.
+const MOBILE_PRIMARY_HREFS = ["/dashboard", "/content", "/calendar", "/inbox"];
+
+export const mobilePrimaryNavItems: NavItem[] = MOBILE_PRIMARY_HREFS.map(
+  (href) => navItems.find((item) => item.href === href)!
+);
+
+export const mobileMoreNavItems: NavItem[] = navItems.filter(
+  (item) => !MOBILE_PRIMARY_HREFS.includes(item.href)
+);

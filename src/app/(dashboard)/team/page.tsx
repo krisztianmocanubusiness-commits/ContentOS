@@ -115,7 +115,7 @@ export default function TeamPage() {
         }
       />
 
-      <Card className="overflow-hidden py-0">
+      <Card className="hidden overflow-hidden py-0 md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -187,6 +187,61 @@ export default function TeamPage() {
           </TableBody>
         </Table>
       </Card>
+
+      <div className="flex flex-col gap-3 md:hidden">
+        {workspaceMembers.map((member) => (
+          <Card key={member.id} className="flex flex-col gap-3 p-4">
+            <div className="flex items-center gap-3">
+              <Avatar>
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  {member.initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-sm font-medium">{member.name}</span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {member.email}
+                </span>
+              </div>
+              {canManageTeam && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-9 shrink-0"
+                  onClick={() => removeMember(member.id)}
+                  aria-label={`Remove ${member.name}`}
+                >
+                  <X className="size-4" />
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              {canManageTeam ? (
+                <Select
+                  value={member.role}
+                  onValueChange={(value) => updateRole(member.id, value as TeamRole)}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ROLES.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <span className="text-sm text-muted-foreground">{member.role}</span>
+              )}
+              <Badge variant={member.status === "Active" ? "success" : "outline"}>
+                {member.status}
+              </Badge>
+            </div>
+          </Card>
+        ))}
+      </div>
 
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
         <DialogContent>

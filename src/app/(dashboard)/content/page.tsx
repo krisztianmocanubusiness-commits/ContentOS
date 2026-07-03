@@ -146,9 +146,16 @@ export default function ContentPage() {
               ? filteredItems
               : filteredItems.filter((item) => item.status === filter.status);
 
+          const emptyMessage =
+            workspaceItems.length === 0
+              ? `No content yet in ${activeWorkspace.name}.`
+              : filteredItems.length === 0
+                ? "No content matches your search or filters."
+                : "No content in this view yet.";
+
           return (
             <TabsContent key={filter.status} value={filter.status}>
-              <Card className="overflow-hidden py-0">
+              <Card className="hidden overflow-hidden py-0 md:block">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -205,17 +212,53 @@ export default function ContentPage() {
                           colSpan={5}
                           className="py-10 text-center text-muted-foreground"
                         >
-                          {workspaceItems.length === 0
-                            ? `No content yet in ${activeWorkspace.name}.`
-                            : filteredItems.length === 0
-                              ? "No content matches your search or filters."
-                              : "No content in this view yet."}
+                          {emptyMessage}
                         </TableCell>
                       </TableRow>
                     )}
                   </TableBody>
                 </Table>
               </Card>
+
+              <div className="flex flex-col gap-3 md:hidden">
+                {rows.length === 0 ? (
+                  <Card className="py-10 text-center text-sm text-muted-foreground">
+                    {emptyMessage}
+                  </Card>
+                ) : (
+                  rows.map((item) => (
+                    <Card
+                      key={item.id}
+                      onClick={() => setSelectedItemId(item.id)}
+                      className="flex cursor-pointer flex-col gap-2 p-4 active:bg-accent/50"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="min-w-0 flex-1 font-medium">
+                          {item.title}
+                        </span>
+                        <Badge variant={statusVariant(item.status)}>
+                          {item.status}
+                        </Badge>
+                      </div>
+                      {item.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {item.tags.slice(0, 3).map((tag) => (
+                            <span
+                              key={tag}
+                              className="text-xs text-muted-foreground"
+                            >
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {item.platform} · {item.author} · {item.date}
+                      </p>
+                    </Card>
+                  ))
+                )}
+              </div>
             </TabsContent>
           );
         })}

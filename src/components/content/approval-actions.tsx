@@ -27,8 +27,13 @@ export function ApprovalActions({
   if (item.status === "Draft") {
     if (!canCreate) return null;
     return (
-      <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 pb-4">
-        <Button size="sm" variant="outline" onClick={onSubmitForReview}>
+      <div className="flex items-center gap-2 border-b border-border px-4 pb-4">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-11 w-full sm:h-8 sm:w-auto"
+          onClick={onSubmitForReview}
+        >
           <Send />
           Submit for review
         </Button>
@@ -55,10 +60,11 @@ export function ApprovalActions({
           placeholder="What needs to change?"
           autoFocus
         />
-        <div className="flex justify-end gap-2">
+        <div className="flex gap-2 sm:justify-end">
           <Button
             size="sm"
             variant="outline"
+            className="h-11 flex-1 sm:h-8 sm:flex-none"
             onClick={() => {
               setRequestingChanges(false);
               setReason("");
@@ -69,6 +75,7 @@ export function ApprovalActions({
           <Button
             size="sm"
             variant="destructive"
+            className="h-11 flex-1 sm:h-8 sm:flex-none"
             disabled={!reason.trim()}
             onClick={() => {
               onRequestChanges(reason.trim());
@@ -85,12 +92,17 @@ export function ApprovalActions({
   }
 
   return (
-    <div className="flex flex-wrap gap-2 border-b border-border px-4 pb-4">
-      <Button size="sm" variant="outline" onClick={() => setRequestingChanges(true)}>
+    <div className="flex gap-2 border-b border-border px-4 pb-4">
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-11 flex-1 sm:h-8 sm:flex-none"
+        onClick={() => setRequestingChanges(true)}
+      >
         <RotateCcw />
         Request changes
       </Button>
-      <Button size="sm" onClick={onApprove}>
+      <Button size="sm" className="h-11 flex-1 sm:h-8 sm:flex-none" onClick={onApprove}>
         <Check />
         Approve
       </Button>

@@ -65,16 +65,16 @@ export default function AnalyticsPage() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4">
         {summary.map((stat) => (
-          <Card key={stat.label}>
-            <CardHeader>
+          <Card key={stat.label} className="w-36 shrink-0 gap-3 py-4 sm:w-auto sm:gap-6 sm:py-6">
+            <CardHeader className="gap-1 px-4 sm:px-6">
               <CardDescription>{stat.label}</CardDescription>
-              <CardTitle className="text-2xl font-semibold">
+              <CardTitle className="text-xl font-semibold sm:text-2xl">
                 {stat.value}
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-0">
+            <CardContent className="px-4 pt-0 sm:px-6">
               <span
                 className={
                   "inline-flex items-center gap-1 text-xs font-medium " +
@@ -127,7 +127,7 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
-      <Card className="mt-6 overflow-hidden py-0">
+      <Card className="mt-6 hidden overflow-hidden py-0 md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -161,6 +161,29 @@ export default function AnalyticsPage() {
           </TableBody>
         </Table>
       </Card>
+
+      <div className="mt-6 flex flex-col gap-3 md:hidden">
+        <h3 className="text-sm font-medium text-muted-foreground">Top posts</h3>
+        {topPosts.length === 0 ? (
+          <Card className="py-10 text-center text-sm text-muted-foreground">
+            No posts published yet in {activeWorkspace.name}.
+          </Card>
+        ) : (
+          topPosts.map((post) => (
+            <Card key={post.id} className="flex flex-col gap-1.5 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <span className="min-w-0 flex-1 font-medium">{post.title}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {post.platform}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {post.reach} reach · {post.engagement} engagement
+              </p>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 }

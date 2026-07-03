@@ -56,6 +56,7 @@ export function ReachChart({ data }: { data: ChartPoint[] }) {
                 onMouseLeave={() => setActiveIndex(null)}
                 onFocus={() => setActiveIndex(i)}
                 onBlur={() => setActiveIndex(null)}
+                onClick={() => setActiveIndex((prev) => (prev === i ? null : i))}
                 aria-label={`${point.label}: ${formatReachK(point.value)} reach`}
               >
                 {isLast && (

@@ -2,6 +2,8 @@
 
 import { EventChip } from "@/components/calendar/event-chip";
 import { DroppableSlot } from "@/components/calendar/droppable-slot";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { platformColor } from "@/lib/platform";
 import { WEEKDAYS, TODAY, buildMonthGrid, isSameDay, toISODate } from "@/lib/calendar";
 import type { CalendarEvent } from "@/lib/mock-data";
 
@@ -9,11 +11,16 @@ export function MonthView({
   cursor,
   events,
   draggable = true,
+  onSelectEvent,
+  onSelectDay,
 }: {
   cursor: Date;
   events: CalendarEvent[];
   draggable?: boolean;
+  onSelectEvent?: (eventId: string) => void;
+  onSelectDay?: (date: Date) => void;
 }) {
+  const isMobile = useIsMobile();
   const cells = buildMonthGrid(cursor.getFullYear(), cursor.getMonth());
 
   return (
@@ -28,7 +35,7 @@ export function MonthView({
       ))}
       {cells.map((day, idx) => {
         if (!day) {
-          return <div key={idx} className="min-h-24 bg-card/50 sm:min-h-28" />;
+          return <div key={idx} className="min-h-14 bg-card/50 sm:min-h-24 md:min-h-28" />;
         }
         const iso = toISODate(day);
         const dayEvents = events
@@ -39,7 +46,8 @@ export function MonthView({
           <DroppableSlot
             key={idx}
             id={`day:${iso}`}
-            className="flex min-h-24 flex-col gap-1 bg-card p-1.5 transition-colors sm:min-h-28"
+            onClick={isMobile ? () => onSelectDay?.(day) : undefined}
+            className="flex min-h-14 flex-col gap-1 bg-card p-1 transition-colors sm:min-h-24 sm:p-1.5 md:min-h-28"
           >
             <span
               className={
@@ -51,9 +59,26 @@ export function MonthView({
             >
               {day.getDate()}
             </span>
-            <div className="flex flex-col gap-1">
+
+            {/* Mobile: a dot per event — legible at this size, tap the day for the full list */}
+            <div className="flex flex-wrap gap-0.5 sm:hidden">
               {dayEvents.map((event) => (
-                <EventChip key={event.id} event={event} draggable={draggable} />
+                <span
+                  key={event.id}
+                  className={`size-1.5 rounded-full ${platformColor[event.platform]}`}
+                />
+              ))}
+            </div>
+
+            {/* Desktop: full chips, individually tappable and (if allowed) draggable */}
+            <div className="hidden flex-col gap-1 sm:flex">
+              {dayEvents.map((event) => (
+                <EventChip
+                  key={event.id}
+                  event={event}
+                  draggable={draggable}
+                  onSelect={() => onSelectEvent?.(event.id)}
+                />
               ))}
             </div>
           </DroppableSlot>

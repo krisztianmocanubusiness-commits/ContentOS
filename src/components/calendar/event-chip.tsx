@@ -66,10 +66,12 @@ export function EventChip({
   event,
   variant = "block",
   draggable = true,
+  onSelect,
 }: {
   event: CalendarEvent;
   variant?: Variant;
   draggable?: boolean;
+  onSelect?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({ id: event.id, data: { event }, disabled: !draggable });
@@ -78,15 +80,31 @@ export function EventChip({
     ? { transform: CSS.Translate.toString(transform), zIndex: 50 }
     : undefined;
 
+  // Not draggable: a real <button> so tap-to-view is keyboard accessible too —
+  // dnd-kit's own attributes (which include aria-disabled when disabled) only
+  // make sense to spread when this is actually a drag handle.
+  if (!draggable) {
+    return (
+      <button
+        type="button"
+        onClick={onSelect}
+        disabled={!onSelect}
+        className={cn("select-none text-left", onSelect && "cursor-pointer")}
+      >
+        <EventChipContent event={event} variant={variant} />
+      </button>
+    );
+  }
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...listeners}
       {...attributes}
+      onClick={onSelect}
       className={cn(
-        "touch-none select-none",
-        draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default",
+        "touch-none cursor-grab select-none active:cursor-grabbing",
         isDragging && "opacity-40"
       )}
     >
