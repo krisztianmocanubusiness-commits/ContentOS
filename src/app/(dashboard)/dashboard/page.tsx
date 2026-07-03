@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { ArrowUpRight, ArrowDownRight, Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -17,7 +18,6 @@ import {
   analyticsForWorkspace,
   calendarEventsForWorkspace,
   contentForWorkspace,
-  currentUser,
 } from "@/lib/mock-data";
 import { statusVariant } from "@/lib/status";
 import { fromISODate, TODAY, toISODate } from "@/lib/calendar";
@@ -25,6 +25,7 @@ import { useWorkspace } from "@/context/workspace-context";
 
 export default function DashboardPage() {
   const { activeWorkspace } = useWorkspace();
+  const { data: session } = useSession();
   const analytics = analyticsForWorkspace(activeWorkspace.id);
   const today = toISODate(TODAY);
   const upcoming = calendarEventsForWorkspace(activeWorkspace.id)
@@ -32,7 +33,7 @@ export default function DashboardPage() {
     .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
     .slice(0, 4);
   const recent = contentForWorkspace(activeWorkspace.id).slice(0, 5);
-  const firstName = currentUser.name.split(" ")[0];
+  const firstName = session?.user?.name?.split(" ")[0] ?? "";
 
   return (
     <div>

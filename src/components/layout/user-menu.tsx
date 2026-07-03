@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { LogOut, Settings, User } from "lucide-react";
 
-import { currentUser } from "@/lib/mock-data";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -16,7 +15,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function UserMenu() {
-  const router = useRouter();
+  const { data: session } = useSession();
+  const name = session?.user?.name ?? "";
+  const email = session?.user?.email ?? "";
+  const initials = session?.user?.initials ?? "";
 
   return (
     <DropdownMenu>
@@ -27,15 +29,15 @@ export function UserMenu() {
         >
           <Avatar className="size-8">
             <AvatarFallback className="bg-primary/10 text-primary">
-              {currentUser.initials}
+              {initials}
             </AvatarFallback>
           </Avatar>
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="truncate text-sm leading-tight font-medium">
-              {currentUser.name}
+              {name}
             </span>
             <span className="truncate text-xs leading-tight text-muted-foreground">
-              {currentUser.email}
+              {email}
             </span>
           </span>
         </button>
@@ -43,9 +45,9 @@ export function UserMenu() {
       <DropdownMenuContent align="start" side="top" className="w-64">
         <DropdownMenuLabel className="font-normal">
           <p className="truncate text-sm font-medium text-foreground">
-            {currentUser.name}
+            {name}
           </p>
-          <p className="truncate text-xs">{currentUser.email}</p>
+          <p className="truncate text-xs">{email}</p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
@@ -61,7 +63,10 @@ export function UserMenu() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onSelect={() => router.push("/login")}>
+        <DropdownMenuItem
+          variant="destructive"
+          onSelect={() => signOut({ callbackUrl: "/login" })}
+        >
           <LogOut />
           Log out
         </DropdownMenuItem>

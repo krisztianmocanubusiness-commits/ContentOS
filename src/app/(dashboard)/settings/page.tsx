@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useTheme } from "next-themes";
+import { useSession } from "next-auth/react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,6 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PermissionButton } from "@/components/permissions/permission-button";
-import { currentUser } from "@/lib/mock-data";
 import { useMounted } from "@/hooks/use-mounted";
 import { usePermission } from "@/hooks/use-permission";
 import { useWorkspace } from "@/context/workspace-context";
@@ -29,6 +29,12 @@ export default function SettingsPage() {
   const mounted = useMounted();
   const { activeWorkspace } = useWorkspace();
   const canManageWorkspace = usePermission("manageWorkspace");
+  const { data: session } = useSession();
+  const currentUser = {
+    name: session?.user?.name ?? "",
+    email: session?.user?.email ?? "",
+    initials: session?.user?.initials ?? "",
+  };
 
   return (
     <div>

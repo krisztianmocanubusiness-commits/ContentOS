@@ -14,12 +14,6 @@ export const workspaces: Workspace[] = [
   { id: "personal", name: "Personal", plan: "Free", initials: "P" },
 ];
 
-export const currentUser = {
-  name: "Krisztián Mocanu",
-  email: "krisztianmocanu.business@gmail.com",
-  initials: "KM",
-};
-
 export type Platform = "Instagram" | "TikTok" | "X" | "LinkedIn" | "YouTube";
 
 export type ContentStatus = "Draft" | "Scheduled" | "Published" | "Needs Review";

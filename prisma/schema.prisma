@@ -1,0 +1,235 @@
+// Prisma schema for Content OS.
+//
+// This is the milestone 10 "foundation" — it models every entity from
+// src/lib/mock-data.ts and is seeded with equivalent data (see
+// prisma/seed.ts), but only auth (User, Workspace, WorkspaceMembership)
+// is wired into the running app so far. Every other page still reads
+// from mock-data.ts; migrating each one to query this schema is future
+// work, one page at a time.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Plan {
+  Free
+  Pro
+  Team
+}
+
+enum TeamRole {
+  Owner
+  Admin
+  Editor
+  Viewer
+}
+
+enum MemberStatus {
+  Active
+  Invited
+}
+
+enum Platform {
+  Instagram
+  TikTok
+  X
+  LinkedIn
+  YouTube
+}
+
+enum ContentStatus {
+  Draft
+  Scheduled
+  Published
+  NeedsReview @map("Needs Review")
+}
+
+enum ReviewAction {
+  submitted
+  approved
+  changes_requested
+}
+
+enum AssetType {
+  Image
+  Video
+  Audio
+  Document
+}
+
+enum SocialStatus {
+  Connected
+  NotConnected @map("Not Connected")
+}
+
+enum MessageSender {
+  them
+  you
+}
+
+enum DealStatus {
+  Negotiating
+  InProgress @map("In Progress")
+  Signed
+  Paid
+  Completed
+}
+
+model User {
+  id           String              @id
+  name         String
+  email        String              @unique
+  passwordHash String
+  initials     String
+  createdAt    DateTime            @default(now())
+  memberships  WorkspaceMembership[]
+}
+
+model Workspace {
+  id             String              @id
+  name           String
+  slug           String              @unique
+  plan           Plan                @default(Free)
+  initials       String
+  createdAt      DateTime            @default(now())
+  memberships    WorkspaceMembership[]
+  content        ContentItem[]
+  calendarEvents CalendarEvent[]
+  assets         Asset[]
+  socialAccounts SocialAccount[]
+  conversations  Conversation[]
+  deals          Deal[]
+}
+
+model WorkspaceMembership {
+  id          String       @id
+  userId      String
+  workspaceId String
+  role        TeamRole
+  status      MemberStatus @default(Active)
+  createdAt   DateTime     @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+}
+
+model ContentItem {
+  id             String    @id
+  workspaceId    String
+  title          String
+  status         ContentStatus
+  platform       Platform
+  scheduledAt    DateTime
+  authorName     String
+  authorInitials String
+  body           String    @db.Text
+  tags           String[]
+  createdAt      DateTime  @default(now())
+
+  workspace    Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  assets       Asset[]
+  comments     ContentComment[]
+  reviewEvents ReviewEvent[]
+}
+
+model ContentComment {
+  id             String   @id
+  contentItemId  String
+  author         String
+  authorInitials String
+  body           String   @db.Text
+  createdAt      DateTime @default(now())
+
+  contentItem ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+}
+
+model ReviewEvent {
+  id            String       @id
+  contentItemId String
+  action        ReviewAction
+  byName        String
+  byInitials    String
+  note          String?      @db.Text
+  createdAt     DateTime     @default(now())
+
+  contentItem ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+}
+
+model CalendarEvent {
+  id          String   @id
+  workspaceId String
+  scheduledAt DateTime
+  title       String
+  platform    Platform
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model Asset {
+  id          String   @id
+  workspaceId String
+  name        String
+  type        AssetType
+  sizeLabel   String
+  folder      String
+  tags        String[]
+  createdAt   DateTime @default(now())
+
+  workspace Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  content   ContentItem[]
+}
+
+model SocialAccount {
+  id             String       @id
+  workspaceId    String
+  platform       Platform
+  handle         String
+  followersLabel String
+  status         SocialStatus
+  connectedSince DateTime?
+  lastSyncedAt   DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model Conversation {
+  id              String   @id
+  workspaceId     String
+  platform        Platform
+  contactName     String
+  contactHandle   String
+  contactInitials String
+  unread          Boolean  @default(false)
+
+  workspace Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  messages  InboxMessage[]
+}
+
+model InboxMessage {
+  id             String        @id
+  conversationId String
+  from           MessageSender
+  body           String        @db.Text
+  createdAt      DateTime      @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model Deal {
+  id          String     @id
+  workspaceId String
+  brand       String
+  title       String
+  valueLabel  String
+  status      DealStatus
+  dueDate     DateTime
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
