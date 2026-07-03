@@ -1,5 +1,6 @@
 export type Workspace = {
   id: string;
+  slug: string;
   name: string;
   plan: "Free" | "Pro" | "Team";
   initials: string;

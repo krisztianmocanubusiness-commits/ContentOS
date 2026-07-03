@@ -1,11 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { useParams, usePathname, useRouter } from "next/navigation";
 
 import type { TeamRole, Workspace } from "@/lib/mock-data";
-
-const ACTIVE_KEY = "content-os:active-workspace";
-const CHANGE_EVENT = "content-os:workspace-change";
 
 type Membership = Workspace & { role: TeamRole };
 
@@ -27,33 +25,22 @@ type WorkspaceContextValue = {
 
 const WorkspaceContext = React.createContext<WorkspaceContextValue | null>(null);
 
-function subscribeToActiveId(callback: () => void) {
-  window.addEventListener(CHANGE_EVENT, callback);
-  window.addEventListener("storage", callback);
-  return () => {
-    window.removeEventListener(CHANGE_EVENT, callback);
-    window.removeEventListener("storage", callback);
-  };
-}
-
-function getStoredActiveId() {
-  return window.localStorage.getItem(ACTIVE_KEY);
-}
-
-function getServerStoredActiveId() {
-  return null;
-}
-
-function writeActiveId(id: string) {
-  window.localStorage.setItem(ACTIVE_KEY, id);
-  window.dispatchEvent(new Event(CHANGE_EVENT));
+/** Swaps the /w/[slug] segment of a path, e.g. /w/keris/content -> /w/buildible/content. */
+function withWorkspaceSlug(pathname: string, slug: string): string {
+  if (/^\/w\/[^/]+/.test(pathname)) {
+    return pathname.replace(/^\/w\/[^/]+/, `/w/${slug}`);
+  }
+  return `/w/${slug}/dashboard`;
 }
 
 /**
  * Fetches the signed-in user's real workspaces from the database and
  * only renders `children` once that's known — every workspace a user can
  * see and act in comes from their actual WorkspaceMembership rows now,
- * not a static list every signed-in session used to share.
+ * not a static list every signed-in session used to share. The *active*
+ * workspace is whatever /w/[workspaceSlug] segment is in the URL, not
+ * client-only state — so two tabs (or two shared links) can have two
+ * different workspaces open at once.
  */
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [memberships, setMemberships] = React.useState<Membership[] | null>(null);
@@ -92,7 +79,14 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <WorkspaceProviderReady memberships={memberships} onCreated={(w) => setMemberships((prev) => [...(prev ?? []), w])}>{children}</WorkspaceProviderReady>;
+  return (
+    <WorkspaceProviderReady
+      memberships={memberships}
+      onCreated={(w) => setMemberships((prev) => [...(prev ?? []), w])}
+    >
+      {children}
+    </WorkspaceProviderReady>
+  );
 }
 
 function WorkspaceProviderReady({
@@ -104,21 +98,19 @@ function WorkspaceProviderReady({
   onCreated: (membership: Membership) => void;
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useParams<{ workspaceSlug?: string }>();
   const [roleOverride, setRoleOverride] = React.useState<{ workspaceId: string; role: TeamRole } | null>(null);
-  const storedActiveId = React.useSyncExternalStore(
-    subscribeToActiveId,
-    getStoredActiveId,
-    getServerStoredActiveId
-  );
 
   const workspaces = React.useMemo<Workspace[]>(
     () =>
-      memberships.map((m) => ({ id: m.id, name: m.name, plan: m.plan, initials: m.initials })),
+      memberships.map((m) => ({ id: m.id, slug: m.slug, name: m.name, plan: m.plan, initials: m.initials })),
     [memberships]
   );
 
   const activeMembership =
-    memberships.find((m) => m.id === storedActiveId) ?? memberships[0];
+    memberships.find((m) => m.slug === params.workspaceSlug) ?? memberships[0];
   const activeWorkspace: Workspace = activeMembership;
 
   const currentRole =
@@ -126,9 +118,14 @@ function WorkspaceProviderReady({
       ? roleOverride.role
       : activeMembership.role;
 
-  const setActiveWorkspaceId = React.useCallback((id: string) => {
-    writeActiveId(id);
-  }, []);
+  const setActiveWorkspaceId = React.useCallback(
+    (id: string) => {
+      const target = memberships.find((m) => m.id === id);
+      if (!target) return;
+      router.push(withWorkspaceSlug(pathname, target.slug));
+    },
+    [memberships, pathname, router]
+  );
 
   const setCurrentRole = React.useCallback(
     (role: TeamRole) => {
@@ -147,10 +144,10 @@ function WorkspaceProviderReady({
       if (!res.ok) throw new Error("Failed to create workspace");
       const { workspace } = (await res.json()) as { workspace: Membership };
       onCreated(workspace);
-      setActiveWorkspaceId(workspace.id);
+      router.push(`/w/${workspace.slug}/dashboard`);
       return workspace;
     },
-    [onCreated, setActiveWorkspaceId]
+    [onCreated, router]
   );
 
   const value = React.useMemo(

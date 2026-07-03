@@ -105,7 +105,7 @@ export default function SettingsPage() {
                 <Label htmlFor="workspaceUrl">Workspace URL</Label>
                 <Input
                   id="workspaceUrl"
-                  defaultValue={`app.contentos.io/${activeWorkspace.id}`}
+                  defaultValue={`app.contentos.io/${activeWorkspace.slug}`}
                   disabled={!canManageWorkspace}
                 />
               </div>
@@ -118,11 +118,11 @@ export default function SettingsPage() {
             <CardFooter className="justify-between border-t border-border pt-6">
               <p className="text-xs text-muted-foreground">
                 Manage channels in{" "}
-                <Link href="/social-accounts" className="font-medium text-foreground hover:underline">
+                <Link href={`/w/${activeWorkspace.slug}/social-accounts`} className="font-medium text-foreground hover:underline">
                   Social Accounts
                 </Link>{" "}
                 and people in{" "}
-                <Link href="/team" className="font-medium text-foreground hover:underline">
+                <Link href={`/w/${activeWorkspace.slug}/team`} className="font-medium text-foreground hover:underline">
                   Team
                 </Link>
                 .

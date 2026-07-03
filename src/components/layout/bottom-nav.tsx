@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { NavLinks } from "@/components/layout/nav-links";
 import { UserMenu } from "@/components/layout/user-menu";
 import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
+import { useWorkspace } from "@/context/workspace-context";
 
 const moreItems = [...mobileMoreNavItems, ...bottomNavItems];
 
@@ -22,8 +23,11 @@ function isActivePath(pathname: string, href: string) {
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { activeWorkspace } = useWorkspace();
   const [moreOpen, setMoreOpen] = React.useState(false);
-  const moreActive = moreItems.some((item) => isActivePath(pathname, item.href));
+  const moreActive = moreItems.some((item) =>
+    isActivePath(pathname, `/w/${activeWorkspace.slug}${item.href}`)
+  );
 
   return (
     <>
@@ -32,12 +36,13 @@ export function BottomNav() {
         className="fixed inset-x-0 bottom-0 z-40 flex border-t border-sidebar-border bg-sidebar pb-[env(safe-area-inset-bottom)] md:hidden"
       >
         {mobilePrimaryNavItems.map((item) => {
-          const isActive = isActivePath(pathname, item.href);
+          const href = `/w/${activeWorkspace.slug}${item.href}`;
+          const isActive = isActivePath(pathname, href);
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={href}
               className={cn(
                 "flex flex-1 flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-medium transition-colors",
                 isActive ? "text-primary" : "text-muted-foreground"

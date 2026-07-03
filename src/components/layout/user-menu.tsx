@@ -13,12 +13,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useWorkspace } from "@/context/workspace-context";
 
 export function UserMenu() {
   const { data: session } = useSession();
+  const { activeWorkspace } = useWorkspace();
   const name = session?.user?.name ?? "";
   const email = session?.user?.email ?? "";
   const initials = session?.user?.initials ?? "";
+  const settingsHref = `/w/${activeWorkspace.slug}/settings`;
 
   return (
     <DropdownMenu>
@@ -51,13 +54,13 @@ export function UserMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/settings">
+          <Link href={settingsHref}>
             <User />
             Profile
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/settings">
+          <Link href={settingsHref}>
             <Settings />
             Settings
           </Link>

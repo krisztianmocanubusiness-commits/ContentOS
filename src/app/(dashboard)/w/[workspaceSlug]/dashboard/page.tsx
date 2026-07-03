@@ -1,0 +1,159 @@
+"use client";
+
+import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { ArrowUpRight, ArrowDownRight, Plus } from "lucide-react";
+
+import { PageHeader } from "@/components/layout/page-header";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  analyticsForWorkspace,
+  calendarEventsForWorkspace,
+  contentForWorkspace,
+} from "@/lib/mock-data";
+import { statusVariant } from "@/lib/status";
+import { fromISODate, TODAY, toISODate } from "@/lib/calendar";
+import { useWorkspace } from "@/context/workspace-context";
+
+export default function DashboardPage() {
+  const { activeWorkspace } = useWorkspace();
+  const { data: session } = useSession();
+  const analytics = analyticsForWorkspace(activeWorkspace.id);
+  const today = toISODate(TODAY);
+  const upcoming = calendarEventsForWorkspace(activeWorkspace.id)
+    .filter((event) => event.date >= today)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
+    .slice(0, 4);
+  const recent = contentForWorkspace(activeWorkspace.id).slice(0, 5);
+  const firstName = session?.user?.name?.split(" ")[0] ?? "";
+
+  return (
+    <div>
+      <PageHeader
+        title={`Welcome back, ${firstName}`}
+        description={`Here's what's happening in ${activeWorkspace.name}.`}
+        action={
+          <Button asChild>
+            <Link href={`/w/${activeWorkspace.slug}/content`}>
+              <Plus />
+              New content
+            </Link>
+          </Button>
+        }
+      />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {analytics.summary.map((stat) => (
+          <Card key={stat.label}>
+            <CardHeader>
+              <CardDescription>{stat.label}</CardDescription>
+              <CardTitle className="text-2xl font-semibold">
+                {stat.value}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <span
+                className={
+                  "inline-flex items-center gap-1 text-xs font-medium " +
+                  (stat.trend === "up" ? "text-success" : "text-destructive")
+                }
+              >
+                {stat.trend === "up" ? (
+                  <ArrowUpRight className="size-3.5" />
+                ) : (
+                  <ArrowDownRight className="size-3.5" />
+                )}
+                {stat.change}
+                <span className="text-muted-foreground">vs last month</span>
+              </span>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex-row items-center justify-between">
+            <div>
+              <CardTitle>Recent content</CardTitle>
+              <CardDescription>Latest updates across your pipeline</CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={`/w/${activeWorkspace.slug}/content`}>View all</Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-1 pt-0">
+            {recent.length === 0 ? (
+              <p className="px-2 py-6 text-sm text-muted-foreground">
+                No content yet in {activeWorkspace.name}.
+              </p>
+            ) : (
+              recent.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/60"
+                >
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate text-sm font-medium">{item.title}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {item.platform} · {item.author}
+                    </span>
+                  </div>
+                  <Badge variant={statusVariant(item.status)}>{item.status}</Badge>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex-row items-center justify-between">
+            <div>
+              <CardTitle>Upcoming</CardTitle>
+              <CardDescription>Next scheduled posts</CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={`/w/${activeWorkspace.slug}/calendar`}>View all</Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-1 pt-0">
+            {upcoming.length === 0 ? (
+              <p className="px-2 py-6 text-sm text-muted-foreground">
+                Nothing scheduled yet.
+              </p>
+            ) : (
+              upcoming.map((event) => {
+                const eventDate = fromISODate(event.date);
+                return (
+                  <div
+                    key={event.id}
+                    className="flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/60"
+                  >
+                    <div className="flex size-9 shrink-0 flex-col items-center justify-center rounded-md border border-border text-xs font-semibold leading-none">
+                      <span>{eventDate.toLocaleDateString("en-US", { month: "short" })}</span>
+                      <span>{eventDate.getDate()}</span>
+                    </div>
+                    <div className="flex min-w-0 flex-col">
+                      <span className="truncate text-sm font-medium">{event.title}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {event.time} · {event.platform}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

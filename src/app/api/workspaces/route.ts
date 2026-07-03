@@ -4,21 +4,17 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { slugify, initialsFromName } from "@/lib/naming";
+import { getCallerMemberships } from "@/lib/workspace-access";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const { userId, memberships } = await getCallerMemberships();
+  if (!userId) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  const memberships = await prisma.workspaceMembership.findMany({
-    where: { userId: session.user.id },
-    include: { workspace: true },
-    orderBy: { createdAt: "asc" },
-  });
-
   const workspaces = memberships.map((membership) => ({
     id: membership.workspace.id,
+    slug: membership.workspace.slug,
     name: membership.workspace.name,
     plan: membership.workspace.plan,
     initials: membership.workspace.initials,
@@ -76,6 +72,7 @@ export async function POST(request: Request) {
     {
       workspace: {
         id: workspace.id,
+        slug: workspace.slug,
         name: workspace.name,
         plan: workspace.plan,
         initials: workspace.initials,
