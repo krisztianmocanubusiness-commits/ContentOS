@@ -4,7 +4,6 @@ import * as React from "react";
 import { Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import {
@@ -18,6 +17,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ContentFilters } from "@/components/content/content-filters";
 import { ContentDetailSheet } from "@/components/content/content-detail-sheet";
+import { PermissionButton } from "@/components/permissions/permission-button";
 import {
   contentItems as seedContentItems,
   tagsForWorkspace,
@@ -90,10 +90,10 @@ export default function ContentPage() {
         title="Content"
         description={`Every piece of content in ${activeWorkspace.name}'s pipeline.`}
         action={
-          <Button>
+          <PermissionButton permission="createContent">
             <Plus />
             New content
-          </Button>
+          </PermissionButton>
         }
       />
 

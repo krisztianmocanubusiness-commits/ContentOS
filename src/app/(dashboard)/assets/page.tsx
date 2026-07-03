@@ -4,12 +4,12 @@ import * as React from "react";
 import { FolderOpen, Upload } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AssetFilters } from "@/components/assets/asset-filters";
 import { AssetDetailDialog } from "@/components/assets/asset-detail-dialog";
 import { UploadDialog, mockSizeFor } from "@/components/assets/upload-dialog";
+import { PermissionButton } from "@/components/permissions/permission-button";
 import {
   assets as seedAssets,
   contentUsingAsset,
@@ -71,10 +71,10 @@ export default function AssetsPage() {
         title="Assets"
         description={`Every image, video, and file used in ${activeWorkspace.name}.`}
         action={
-          <Button onClick={() => setUploadOpen(true)}>
+          <PermissionButton permission="createContent" onClick={() => setUploadOpen(true)}>
             <Upload />
             Upload asset
-          </Button>
+          </PermissionButton>
         }
       />
 
@@ -88,10 +88,15 @@ export default function AssetsPage() {
               use them in content.
             </p>
           </div>
-          <Button size="sm" className="mt-1" onClick={() => setUploadOpen(true)}>
+          <PermissionButton
+            permission="createContent"
+            size="sm"
+            className="mt-1"
+            onClick={() => setUploadOpen(true)}
+          >
             <Upload />
             Upload asset
-          </Button>
+          </PermissionButton>
         </Card>
       ) : (
         <>

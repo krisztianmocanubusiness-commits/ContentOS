@@ -21,6 +21,7 @@ import { MonthView } from "@/components/calendar/month-view";
 import { WeekView } from "@/components/calendar/week-view";
 import { DayView } from "@/components/calendar/day-view";
 import { EventChipContent } from "@/components/calendar/event-chip";
+import { PermissionButton } from "@/components/permissions/permission-button";
 import {
   TODAY,
   addDays,
@@ -32,12 +33,14 @@ import {
   startOfWeek,
 } from "@/lib/calendar";
 import { calendarEvents as seedCalendarEvents } from "@/lib/mock-data";
+import { usePermission } from "@/hooks/use-permission";
 import { useWorkspace } from "@/context/workspace-context";
 
 type CalendarViewMode = "month" | "week" | "day";
 
 export default function CalendarPage() {
   const { activeWorkspace } = useWorkspace();
+  const canPublish = usePermission("publishContent");
   const [events, setEvents] = React.useState(seedCalendarEvents);
   const [view, setView] = React.useState<CalendarViewMode>("month");
   const [cursor, setCursor] = React.useState(() => new Date(TODAY));
@@ -106,10 +109,10 @@ export default function CalendarPage() {
         title="Calendar"
         description={`Visualize ${activeWorkspace.name}'s content schedule across every channel.`}
         action={
-          <Button>
+          <PermissionButton permission="publishContent">
             <Plus />
             Schedule post
-          </Button>
+          </PermissionButton>
         }
       />
 
@@ -146,9 +149,15 @@ export default function CalendarPage() {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          {view === "month" && <MonthView cursor={cursor} events={workspaceEvents} />}
-          {view === "week" && <WeekView cursor={cursor} events={workspaceEvents} />}
-          {view === "day" && <DayView cursor={cursor} events={workspaceEvents} />}
+          {view === "month" && (
+            <MonthView cursor={cursor} events={workspaceEvents} draggable={canPublish} />
+          )}
+          {view === "week" && (
+            <WeekView cursor={cursor} events={workspaceEvents} draggable={canPublish} />
+          )}
+          {view === "day" && (
+            <DayView cursor={cursor} events={workspaceEvents} draggable={canPublish} />
+          )}
 
           <DragOverlay>
             {activeEvent ? (

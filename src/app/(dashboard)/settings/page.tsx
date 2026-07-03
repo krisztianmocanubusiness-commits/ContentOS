@@ -18,14 +18,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { PermissionButton } from "@/components/permissions/permission-button";
 import { currentUser } from "@/lib/mock-data";
 import { useMounted } from "@/hooks/use-mounted";
+import { usePermission } from "@/hooks/use-permission";
 import { useWorkspace } from "@/context/workspace-context";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const mounted = useMounted();
   const { activeWorkspace } = useWorkspace();
+  const canManageWorkspace = usePermission("manageWorkspace");
 
   return (
     <div>
@@ -86,15 +89,25 @@ export default function SettingsPage() {
             <CardContent className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="workspaceName">Workspace name</Label>
-                <Input id="workspaceName" defaultValue={activeWorkspace.name} />
+                <Input
+                  id="workspaceName"
+                  defaultValue={activeWorkspace.name}
+                  disabled={!canManageWorkspace}
+                />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="workspaceUrl">Workspace URL</Label>
                 <Input
                   id="workspaceUrl"
                   defaultValue={`app.contentos.io/${activeWorkspace.id}`}
+                  disabled={!canManageWorkspace}
                 />
               </div>
+              {!canManageWorkspace && (
+                <p className="text-xs text-muted-foreground">
+                  Only the workspace Owner can change these settings.
+                </p>
+              )}
             </CardContent>
             <CardFooter className="justify-between border-t border-border pt-6">
               <p className="text-xs text-muted-foreground">
@@ -108,7 +121,9 @@ export default function SettingsPage() {
                 </Link>
                 .
               </p>
-              <Button>Save changes</Button>
+              <PermissionButton permission="manageWorkspace">
+                Save changes
+              </PermissionButton>
             </CardFooter>
           </Card>
         </TabsContent>

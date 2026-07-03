@@ -467,12 +467,14 @@ export function socialAccountsForWorkspace(workspaceId: string) {
   return socialAccounts.filter((account) => account.workspaceId === workspaceId);
 }
 
+export type TeamRole = "Owner" | "Admin" | "Editor" | "Viewer";
+
 export type TeamMember = {
   id: string;
   workspaceId: string;
   name: string;
   email: string;
-  role: "Owner" | "Admin" | "Editor" | "Viewer";
+  role: TeamRole;
   status: "Active" | "Invited";
   initials: string;
 };

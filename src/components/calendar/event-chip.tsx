@@ -65,12 +65,14 @@ export function EventChipContent({
 export function EventChip({
   event,
   variant = "block",
+  draggable = true,
 }: {
   event: CalendarEvent;
   variant?: Variant;
+  draggable?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({ id: event.id, data: { event } });
+    useDraggable({ id: event.id, data: { event }, disabled: !draggable });
 
   const style = transform
     ? { transform: CSS.Translate.toString(transform), zIndex: 50 }
@@ -83,7 +85,8 @@ export function EventChip({
       {...listeners}
       {...attributes}
       className={cn(
-        "cursor-grab touch-none active:cursor-grabbing",
+        "touch-none select-none",
+        draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default",
         isDragging && "opacity-40"
       )}
     >

@@ -5,8 +5,8 @@ import { Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { PermissionButton } from "@/components/permissions/permission-button";
 import { socialAccounts as seedSocialAccounts } from "@/lib/mock-data";
 import { platformAbbr, platformColor } from "@/lib/platform";
 import { useWorkspace } from "@/context/workspace-context";
@@ -38,10 +38,10 @@ export default function SocialAccountsPage() {
         title="Social Accounts"
         description={`Channels connected to ${activeWorkspace.name}. Every workspace manages its own accounts.`}
         action={
-          <Button>
+          <PermissionButton permission="manageSocialAccounts">
             <Plus />
             Connect account
-          </Button>
+          </PermissionButton>
         }
       />
 
@@ -80,13 +80,14 @@ export default function SocialAccountsPage() {
                   >
                     {account.status}
                   </Badge>
-                  <Button
+                  <PermissionButton
+                    permission="manageSocialAccounts"
                     variant="outline"
                     size="sm"
                     onClick={() => toggleAccountStatus(account.id)}
                   >
                     {account.status === "Connected" ? "Disconnect" : "Connect"}
-                  </Button>
+                  </PermissionButton>
                 </div>
               </div>
             ))

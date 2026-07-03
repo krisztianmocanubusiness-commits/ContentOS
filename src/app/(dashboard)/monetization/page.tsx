@@ -4,7 +4,7 @@ import { ArrowDownRight, ArrowUpRight, Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { PermissionButton } from "@/components/permissions/permission-button";
 import {
   Card,
   CardContent,
@@ -34,10 +34,10 @@ export default function MonetizationPage() {
         title="Monetization"
         description={`Brand deals and revenue for ${activeWorkspace.name}.`}
         action={
-          <Button>
+          <PermissionButton permission="manageMonetization">
             <Plus />
             New deal
-          </Button>
+          </PermissionButton>
         }
       />
 

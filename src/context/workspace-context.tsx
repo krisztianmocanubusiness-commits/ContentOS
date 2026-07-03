@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { workspaces as seedWorkspaces, type Workspace } from "@/lib/mock-data";
+import { workspaces as seedWorkspaces, type TeamRole, type Workspace } from "@/lib/mock-data";
 
 const ACTIVE_KEY = "content-os:active-workspace";
 const CUSTOM_KEY = "content-os:custom-workspaces";
@@ -15,6 +15,13 @@ type WorkspaceContextValue = {
   activeWorkspace: Workspace;
   setActiveWorkspaceId: (id: string) => void;
   createWorkspace: (name: string) => Workspace;
+  /**
+   * The signed-in user is always the Owner in the mock data, so this lets
+   * the app preview how the UI gates itself for other roles — a demo/QA
+   * aid, not a real permission change. Resets on reload.
+   */
+  currentRole: TeamRole;
+  setCurrentRole: (role: TeamRole) => void;
 };
 
 const WorkspaceContext = React.createContext<WorkspaceContextValue | null>(null);
@@ -84,6 +91,7 @@ function writeCustomWorkspaces(list: Workspace[]) {
 }
 
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
+  const [currentRole, setCurrentRole] = React.useState<TeamRole>("Owner");
   const storedActiveId = React.useSyncExternalStore(
     subscribeToWorkspaceStore,
     getStoredActiveId,
@@ -128,8 +136,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       activeWorkspace,
       setActiveWorkspaceId,
       createWorkspace,
+      currentRole,
+      setCurrentRole,
     }),
-    [workspaces, activeWorkspace, setActiveWorkspaceId, createWorkspace]
+    [workspaces, activeWorkspace, setActiveWorkspaceId, createWorkspace, currentRole]
   );
 
   return (

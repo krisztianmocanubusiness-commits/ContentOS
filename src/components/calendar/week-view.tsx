@@ -8,9 +8,11 @@ import type { CalendarEvent } from "@/lib/mock-data";
 export function WeekView({
   cursor,
   events,
+  draggable = true,
 }: {
   cursor: Date;
   events: CalendarEvent[];
+  draggable?: boolean;
 }) {
   const weekStart = startOfWeek(cursor);
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -45,7 +47,7 @@ export function WeekView({
             </div>
             <div className="flex flex-col gap-1.5">
               {dayEvents.map((event) => (
-                <EventChip key={event.id} event={event} variant="detailed" />
+                <EventChip key={event.id} event={event} variant="detailed" draggable={draggable} />
               ))}
             </div>
           </DroppableSlot>

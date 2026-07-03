@@ -8,9 +8,11 @@ import type { CalendarEvent } from "@/lib/mock-data";
 export function MonthView({
   cursor,
   events,
+  draggable = true,
 }: {
   cursor: Date;
   events: CalendarEvent[];
+  draggable?: boolean;
 }) {
   const cells = buildMonthGrid(cursor.getFullYear(), cursor.getMonth());
 
@@ -51,7 +53,7 @@ export function MonthView({
             </span>
             <div className="flex flex-col gap-1">
               {dayEvents.map((event) => (
-                <EventChip key={event.id} event={event} />
+                <EventChip key={event.id} event={event} draggable={draggable} />
               ))}
             </div>
           </DroppableSlot>
