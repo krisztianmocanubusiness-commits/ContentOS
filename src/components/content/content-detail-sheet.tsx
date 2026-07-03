@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Send } from "lucide-react";
+import { Check, RotateCcw, Send } from "lucide-react";
 
 import {
   Sheet,
@@ -15,20 +15,39 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { assetById, type ContentItem } from "@/lib/mock-data";
+import { ApprovalActions } from "@/components/content/approval-actions";
+import { assetById, type ContentItem, type ReviewAction } from "@/lib/mock-data";
 import { assetTypeIcon } from "@/lib/asset-icon";
 import { statusVariant } from "@/lib/status";
+
+const REVIEW_ACTION_LABEL: Record<ReviewAction, string> = {
+  submitted: "submitted for review",
+  approved: "approved",
+  changes_requested: "requested changes",
+};
+
+const REVIEW_ACTION_ICON: Record<ReviewAction, React.ElementType> = {
+  submitted: Send,
+  approved: Check,
+  changes_requested: RotateCcw,
+};
 
 export function ContentDetailSheet({
   item,
   open,
   onOpenChange,
   onAddComment,
+  onSubmitForReview,
+  onApprove,
+  onRequestChanges,
 }: {
   item: ContentItem | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddComment: (itemId: string, body: string) => void;
+  onSubmitForReview: (itemId: string) => void;
+  onApprove: (itemId: string) => void;
+  onRequestChanges: (itemId: string, reason: string) => void;
 }) {
   const [draft, setDraft] = React.useState("");
 
@@ -69,7 +88,14 @@ export function ContentDetailSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-4 pb-4">
+        <ApprovalActions
+          item={item}
+          onSubmitForReview={() => onSubmitForReview(item.id)}
+          onApprove={() => onApprove(item.id)}
+          onRequestChanges={(reason) => onRequestChanges(item.id, reason)}
+        />
+
+        <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-4 pt-4 pb-4">
           <p className="rounded-lg border border-border bg-muted/40 p-3 text-sm leading-relaxed whitespace-pre-wrap">
             {item.body}
           </p>
@@ -102,6 +128,40 @@ export function ContentDetailSheet({
                       <span className="shrink-0 text-xs text-muted-foreground">
                         {asset.size}
                       </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {item.reviewHistory.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <h4 className="text-xs font-medium text-muted-foreground">
+                Review history
+              </h4>
+              <div className="flex flex-col gap-2">
+                {item.reviewHistory.map((event) => {
+                  const Icon = REVIEW_ACTION_ICON[event.action];
+                  return (
+                    <div key={event.id} className="flex items-start gap-2.5 text-sm">
+                      <Icon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <span>
+                          <span className="font-medium">{event.by}</span>{" "}
+                          <span className="text-muted-foreground">
+                            {REVIEW_ACTION_LABEL[event.action]}
+                          </span>{" "}
+                          <span className="text-xs text-muted-foreground">
+                            · {event.timestamp}
+                          </span>
+                        </span>
+                        {event.note && (
+                          <p className="text-xs text-muted-foreground italic">
+                            &ldquo;{event.note}&rdquo;
+                          </p>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

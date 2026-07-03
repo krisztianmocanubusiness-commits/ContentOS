@@ -23,6 +23,7 @@ import {
   tagsForWorkspace,
   type ContentStatus,
   type Platform,
+  type ReviewAction,
 } from "@/lib/mock-data";
 import { statusVariant } from "@/lib/status";
 import { useWorkspace } from "@/context/workspace-context";
@@ -82,6 +83,47 @@ export default function ContentPage() {
           : item
       )
     );
+  }
+
+  function logReviewEvent(
+    itemId: string,
+    action: ReviewAction,
+    nextStatus: ContentStatus,
+    note?: string
+  ) {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === itemId
+          ? {
+              ...item,
+              status: nextStatus,
+              reviewHistory: [
+                ...item.reviewHistory,
+                {
+                  id: `${itemId}-rv${item.reviewHistory.length + 1}`,
+                  action,
+                  by: "You",
+                  byInitials: "YO",
+                  timestamp: "Just now",
+                  note,
+                },
+              ],
+            }
+          : item
+      )
+    );
+  }
+
+  function submitForReview(itemId: string) {
+    logReviewEvent(itemId, "submitted", "Needs Review");
+  }
+
+  function approveItem(itemId: string) {
+    logReviewEvent(itemId, "approved", "Scheduled");
+  }
+
+  function requestChanges(itemId: string, reason: string) {
+    logReviewEvent(itemId, "changes_requested", "Draft", reason);
   }
 
   return (
@@ -204,6 +246,9 @@ export default function ContentPage() {
           if (!open) setSelectedItemId(null);
         }}
         onAddComment={addComment}
+        onSubmitForReview={submitForReview}
+        onApprove={approveItem}
+        onRequestChanges={requestChanges}
       />
     </div>
   );

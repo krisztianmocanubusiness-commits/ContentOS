@@ -32,6 +32,17 @@ export type ContentComment = {
   timestamp: string;
 };
 
+export type ReviewAction = "submitted" | "approved" | "changes_requested";
+
+export type ReviewEvent = {
+  id: string;
+  action: ReviewAction;
+  by: string;
+  byInitials: string;
+  timestamp: string;
+  note?: string;
+};
+
 export type ContentItem = {
   id: string;
   workspaceId: string;
@@ -46,6 +57,7 @@ export type ContentItem = {
   tags: string[];
   assetIds: string[];
   comments: ContentComment[];
+  reviewHistory: ReviewEvent[];
 };
 
 export const contentItems: ContentItem[] = [
@@ -57,6 +69,7 @@ export const contentItems: ContentItem[] = [
     tags: ["reel", "morning-routine", "lifestyle"],
     assetIds: ["a1"],
     comments: [],
+    reviewHistory: [],
   },
   {
     id: "c2", workspaceId: "keris", title: "Outfit try-on carousel", status: "Draft", platform: "Instagram", date: "Jul 4",
@@ -67,6 +80,7 @@ export const contentItems: ContentItem[] = [
     comments: [
       { id: "cm1", author: "Ava Reyes", authorInitials: "AR", body: "Can we get the studio shots re-edited with warmer tones before this goes out?", timestamp: "1d ago" },
     ],
+    reviewHistory: [],
   },
   {
     id: "c3", workspaceId: "keris", title: "Q&A Instagram Live recap", status: "Needs Review", platform: "Instagram", date: "Jul 6",
@@ -78,6 +92,9 @@ export const contentItems: ContentItem[] = [
       { id: "cm2", author: "Krisztián Mocanu", authorInitials: "KM", body: "Love this — can we swap slide 4 to lead with the podcast announcement instead?", timestamp: "3h ago" },
       { id: "cm3", author: "Mila Chen", authorInitials: "MC", body: "Good call, updating now.", timestamp: "2h ago" },
     ],
+    reviewHistory: [
+      { id: "rv1", action: "submitted", by: "Mila Chen", byInitials: "MC", timestamp: "4h ago" },
+    ],
   },
   {
     id: "c4", workspaceId: "keris", title: "Monthly favorites video", status: "Scheduled", platform: "YouTube", date: "Jul 10",
@@ -86,6 +103,7 @@ export const contentItems: ContentItem[] = [
     tags: ["youtube", "monthly-recap"],
     assetIds: [],
     comments: [],
+    reviewHistory: [],
   },
   {
     id: "c5", workspaceId: "keris", title: "Travel diary thread", status: "Published", platform: "X", date: "Jun 28",
@@ -94,6 +112,7 @@ export const contentItems: ContentItem[] = [
     tags: ["thread", "travel"],
     assetIds: [],
     comments: [],
+    reviewHistory: [],
   },
 
   // Buildible — B2B SaaS product
@@ -104,6 +123,7 @@ export const contentItems: ContentItem[] = [
     tags: ["product", "changelog", "release"],
     assetIds: [],
     comments: [],
+    reviewHistory: [],
   },
   {
     id: "c7", workspaceId: "buildible", title: "Customer case study: Nova Retail", status: "Needs Review", platform: "LinkedIn", date: "Jul 7",
@@ -114,6 +134,9 @@ export const contentItems: ContentItem[] = [
     comments: [
       { id: "cm4", author: "Krisztián Mocanu", authorInitials: "KM", body: "Great write-up — let's get a quote from their VP of Marketing before we publish.", timestamp: "5h ago" },
     ],
+    reviewHistory: [
+      { id: "rv2", action: "submitted", by: "Leo Dupont", byInitials: "LD", timestamp: "6h ago" },
+    ],
   },
   {
     id: "c8", workspaceId: "buildible", title: "Feature demo: automations", status: "Draft", platform: "YouTube", date: "Jul 9",
@@ -122,6 +145,7 @@ export const contentItems: ContentItem[] = [
     tags: ["demo", "automations", "feature"],
     assetIds: ["a5"],
     comments: [],
+    reviewHistory: [],
   },
   {
     id: "c9", workspaceId: "buildible", title: "Engineering deep dive thread", status: "Published", platform: "X", date: "Jun 30",
@@ -130,6 +154,7 @@ export const contentItems: ContentItem[] = [
     tags: ["engineering", "technical"],
     assetIds: [],
     comments: [],
+    reviewHistory: [],
   },
   {
     id: "c10", workspaceId: "buildible", title: "Integration launch announcement", status: "Scheduled", platform: "LinkedIn", date: "Jul 14",
@@ -138,6 +163,7 @@ export const contentItems: ContentItem[] = [
     tags: ["integration", "launch", "announcement"],
     assetIds: ["a7"],
     comments: [],
+    reviewHistory: [],
   },
 
   // Personal — intentionally empty to demo the zero-data state
