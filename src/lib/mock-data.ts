@@ -375,26 +375,29 @@ export function analyticsForWorkspace(
   return analyticsByWorkspace[workspaceId]?.[range] ?? emptyRangeAnalytics;
 }
 
+export type AssetType = "Image" | "Video" | "Audio" | "Document";
+
 export type Asset = {
   id: string;
   workspaceId: string;
   name: string;
-  type: "Image" | "Video" | "Audio" | "Document";
+  type: AssetType;
   size: string;
   date: string;
-  usedIn: number;
+  folder: string;
+  tags: string[];
 };
 
 export const assets: Asset[] = [
-  { id: "a1", workspaceId: "keris", name: "morning-routine-final.mp4", type: "Video", size: "96.2 MB", date: "Jun 28", usedIn: 2 },
-  { id: "a2", workspaceId: "keris", name: "brand-moodboard.png", type: "Image", size: "3.1 MB", date: "Jun 29", usedIn: 6 },
-  { id: "a3", workspaceId: "keris", name: "podcast-intro.wav", type: "Audio", size: "4.8 MB", date: "Jun 30", usedIn: 1 },
-  { id: "a4", workspaceId: "keris", name: "media-kit-2026.pdf", type: "Document", size: "2.4 MB", date: "Jul 1", usedIn: 3 },
+  { id: "a1", workspaceId: "keris", name: "morning-routine-final.mp4", type: "Video", size: "96.2 MB", date: "Jun 28", folder: "Reels & Videos", tags: ["morning-routine", "reel"] },
+  { id: "a2", workspaceId: "keris", name: "brand-moodboard.png", type: "Image", size: "3.1 MB", date: "Jun 29", folder: "Brand Assets", tags: ["moodboard", "branding"] },
+  { id: "a3", workspaceId: "keris", name: "podcast-intro.wav", type: "Audio", size: "4.8 MB", date: "Jun 30", folder: "Podcast", tags: ["podcast", "intro"] },
+  { id: "a4", workspaceId: "keris", name: "media-kit-2026.pdf", type: "Document", size: "2.4 MB", date: "Jul 1", folder: "Press Kit", tags: ["press", "media-kit"] },
 
-  { id: "a5", workspaceId: "buildible", name: "product-demo-v2.mp4", type: "Video", size: "118 MB", date: "Jun 27", usedIn: 4 },
-  { id: "a6", workspaceId: "buildible", name: "case-study-nova-retail.pdf", type: "Document", size: "1.6 MB", date: "Jun 29", usedIn: 2 },
-  { id: "a7", workspaceId: "buildible", name: "logo-lockup-dark.png", type: "Image", size: "340 KB", date: "Jun 30", usedIn: 9 },
-  { id: "a8", workspaceId: "buildible", name: "founder-interview.wav", type: "Audio", size: "8.2 MB", date: "Jul 1", usedIn: 1 },
+  { id: "a5", workspaceId: "buildible", name: "product-demo-v2.mp4", type: "Video", size: "118 MB", date: "Jun 27", folder: "Product Demos", tags: ["demo", "automations"] },
+  { id: "a6", workspaceId: "buildible", name: "case-study-nova-retail.pdf", type: "Document", size: "1.6 MB", date: "Jun 29", folder: "Case Studies", tags: ["case-study", "nova-retail"] },
+  { id: "a7", workspaceId: "buildible", name: "logo-lockup-dark.png", type: "Image", size: "340 KB", date: "Jun 30", folder: "Brand Assets", tags: ["logo", "branding"] },
+  { id: "a8", workspaceId: "buildible", name: "founder-interview.wav", type: "Audio", size: "8.2 MB", date: "Jul 1", folder: "Interviews", tags: ["interview", "founder"] },
 
   // Personal — intentionally empty
 ];
@@ -447,6 +450,17 @@ export function assetsForWorkspace(workspaceId: string) {
 
 export function assetById(id: string) {
   return assets.find((asset) => asset.id === id);
+}
+
+export function foldersForWorkspace(workspaceId: string): string[] {
+  const folders = new Set<string>();
+  for (const asset of assetsForWorkspace(workspaceId)) folders.add(asset.folder);
+  return Array.from(folders).sort();
+}
+
+/** Content items that link this asset via ContentItem.assetIds. */
+export function contentUsingAsset(assetId: string) {
+  return contentItems.filter((item) => item.assetIds.includes(assetId));
 }
 
 export function socialAccountsForWorkspace(workspaceId: string) {
