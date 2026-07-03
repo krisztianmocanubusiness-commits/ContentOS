@@ -435,17 +435,19 @@ export type SocialAccount = {
   handle: string;
   followers: string;
   status: "Connected" | "Not Connected";
+  connectedSince: string;
+  lastSynced: string;
 };
 
 export const socialAccounts: SocialAccount[] = [
-  { id: "s1", workspaceId: "keris", platform: "Instagram", handle: "@keris", followers: "212K", status: "Connected" },
-  { id: "s2", workspaceId: "keris", platform: "TikTok", handle: "@keris", followers: "340K", status: "Connected" },
-  { id: "s3", workspaceId: "keris", platform: "YouTube", handle: "Keris", followers: "58K", status: "Connected" },
-  { id: "s4", workspaceId: "keris", platform: "X", handle: "@keris", followers: "12K", status: "Not Connected" },
+  { id: "s1", workspaceId: "keris", platform: "Instagram", handle: "@keris", followers: "212K", status: "Connected", connectedSince: "Jan 2024", lastSynced: "2h ago" },
+  { id: "s2", workspaceId: "keris", platform: "TikTok", handle: "@keris", followers: "340K", status: "Connected", connectedSince: "Mar 2024", lastSynced: "1h ago" },
+  { id: "s3", workspaceId: "keris", platform: "YouTube", handle: "Keris", followers: "58K", status: "Connected", connectedSince: "Aug 2023", lastSynced: "5h ago" },
+  { id: "s4", workspaceId: "keris", platform: "X", handle: "@keris", followers: "12K", status: "Not Connected", connectedSince: "—", lastSynced: "—" },
 
-  { id: "s5", workspaceId: "buildible", platform: "LinkedIn", handle: "Buildible", followers: "8.4K", status: "Connected" },
-  { id: "s6", workspaceId: "buildible", platform: "X", handle: "@buildible", followers: "5.1K", status: "Connected" },
-  { id: "s7", workspaceId: "buildible", platform: "YouTube", handle: "Buildible", followers: "2.3K", status: "Not Connected" },
+  { id: "s5", workspaceId: "buildible", platform: "LinkedIn", handle: "Buildible", followers: "8.4K", status: "Connected", connectedSince: "Feb 2025", lastSynced: "3h ago" },
+  { id: "s6", workspaceId: "buildible", platform: "X", handle: "@buildible", followers: "5.1K", status: "Connected", connectedSince: "Feb 2025", lastSynced: "6h ago" },
+  { id: "s7", workspaceId: "buildible", platform: "YouTube", handle: "Buildible", followers: "2.3K", status: "Not Connected", connectedSince: "—", lastSynced: "—" },
 
   // Personal — intentionally empty
 ];

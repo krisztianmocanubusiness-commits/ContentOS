@@ -7,16 +7,27 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { PermissionButton } from "@/components/permissions/permission-button";
-import { socialAccounts as seedSocialAccounts } from "@/lib/mock-data";
+import { AccountDetailDialog } from "@/components/social/account-detail-dialog";
+import { ConnectAccountDialog } from "@/components/social/connect-account-dialog";
+import {
+  socialAccounts as seedSocialAccounts,
+  type Platform,
+  type SocialAccount,
+} from "@/lib/mock-data";
 import { platformAbbr, platformColor } from "@/lib/platform";
 import { useWorkspace } from "@/context/workspace-context";
 
 export default function SocialAccountsPage() {
   const { activeWorkspace } = useWorkspace();
   const [accounts, setAccounts] = React.useState(seedSocialAccounts);
+  const [selectedAccountId, setSelectedAccountId] = React.useState<string | null>(null);
+  const [connectOpen, setConnectOpen] = React.useState(false);
   const workspaceAccounts = accounts.filter(
     (account) => account.workspaceId === activeWorkspace.id
   );
+
+  const selectedAccount =
+    accounts.find((account) => account.id === selectedAccountId) ?? null;
 
   function toggleAccountStatus(id: string) {
     setAccounts((prev) =>
@@ -26,10 +37,25 @@ export default function SocialAccountsPage() {
               ...account,
               status:
                 account.status === "Connected" ? "Not Connected" : "Connected",
+              lastSynced: account.status === "Connected" ? account.lastSynced : "Just now",
             }
           : account
       )
     );
+  }
+
+  function connectAccount(input: { platform: Platform; handle: string }) {
+    const newAccount: SocialAccount = {
+      id: `s-${Date.now().toString(36)}`,
+      workspaceId: activeWorkspace.id,
+      platform: input.platform,
+      handle: input.handle,
+      followers: "0",
+      status: "Connected",
+      connectedSince: "Just now",
+      lastSynced: "Just now",
+    };
+    setAccounts((prev) => [newAccount, ...prev]);
   }
 
   return (
@@ -38,7 +64,10 @@ export default function SocialAccountsPage() {
         title="Social Accounts"
         description={`Channels connected to ${activeWorkspace.name}. Every workspace manages its own accounts.`}
         action={
-          <PermissionButton permission="manageSocialAccounts">
+          <PermissionButton
+            permission="manageSocialAccounts"
+            onClick={() => setConnectOpen(true)}
+          >
             <Plus />
             Connect account
           </PermissionButton>
@@ -57,21 +86,25 @@ export default function SocialAccountsPage() {
                 key={account.id}
                 className="flex items-center justify-between gap-3 px-6 py-4"
               >
-                <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedAccountId(account.id)}
+                  className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left"
+                >
                   <span
                     className={`flex size-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white ${platformColor[account.platform]}`}
                   >
                     {platformAbbr[account.platform]}
                   </span>
-                  <div className="flex flex-col">
+                  <div className="flex min-w-0 flex-col">
                     <span className="text-sm font-medium">
                       {account.platform}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="truncate text-xs text-muted-foreground">
                       {account.handle} · {account.followers} followers
                     </span>
                   </div>
-                </div>
+                </button>
                 <div className="flex items-center gap-3">
                   <Badge
                     variant={
@@ -102,6 +135,20 @@ export default function SocialAccountsPage() {
           </CardFooter>
         )}
       </Card>
+
+      <AccountDetailDialog
+        account={selectedAccount}
+        open={selectedAccount !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedAccountId(null);
+        }}
+      />
+
+      <ConnectAccountDialog
+        open={connectOpen}
+        onOpenChange={setConnectOpen}
+        onConnect={connectAccount}
+      />
     </div>
   );
 }
