@@ -35,6 +35,7 @@ const REVIEW_ACTION_ICON: Record<ReviewAction, React.ElementType> = {
 export function ContentDetailSheet({
   item,
   open,
+  pending = false,
   onOpenChange,
   onAddComment,
   onSubmitForReview,
@@ -43,6 +44,7 @@ export function ContentDetailSheet({
 }: {
   item: ContentItem | null;
   open: boolean;
+  pending?: boolean;
   onOpenChange: (open: boolean) => void;
   onAddComment: (itemId: string, body: string) => void;
   onSubmitForReview: (itemId: string) => void;
@@ -53,7 +55,7 @@ export function ContentDetailSheet({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!item) return;
+    if (!item || pending) return;
     const trimmed = draft.trim();
     if (!trimmed) return;
     onAddComment(item.id, trimmed);
@@ -90,6 +92,7 @@ export function ContentDetailSheet({
 
         <ApprovalActions
           item={item}
+          pending={pending}
           onSubmitForReview={() => onSubmitForReview(item.id)}
           onApprove={() => onApprove(item.id)}
           onRequestChanges={(reason) => onRequestChanges(item.id, reason)}
@@ -211,8 +214,9 @@ export function ContentDetailSheet({
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Add a comment..."
             className="flex-1"
+            disabled={pending}
           />
-          <Button type="submit" size="icon" disabled={!draft.trim()}>
+          <Button type="submit" size="icon" disabled={!draft.trim() || pending}>
             <Send />
           </Button>
         </form>

@@ -104,6 +104,7 @@ model Workspace {
   socialAccounts SocialAccount[]
   conversations  Conversation[]
   deals          Deal[]
+  auditLogs      AuditLog[]
 }
 
 model WorkspaceMembership {
@@ -138,6 +139,7 @@ model ContentItem {
   assets       Asset[]
   comments     ContentComment[]
   reviewEvents ReviewEvent[]
+  auditLogs    AuditLog[]
 
   @@index([workspaceId])
 }
@@ -251,4 +253,34 @@ model Deal {
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId])
+}
+
+enum AuditAction {
+  ContentSubmitted
+  ContentApproved
+  ContentChangesRequested
+  ContentCommented
+}
+
+/**
+ * Immutable record of who did what and when, independent of the
+ * mutable domain rows (ContentItem.status, ContentComment) the UI
+ * renders. Nothing reads this yet — it exists so approvals, rejections,
+ * status changes, and comments all have a durable trail from day one.
+ */
+model AuditLog {
+  id            String      @id
+  workspaceId   String
+  contentItemId String?
+  actorId       String
+  actorName     String
+  action        AuditAction
+  metadata      Json?
+  createdAt     DateTime    @default(now())
+
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contentItem ContentItem? @relation(fields: [contentItemId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([contentItemId])
 }

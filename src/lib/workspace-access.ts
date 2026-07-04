@@ -56,6 +56,8 @@ export const requireWorkspaceAccess = cache(async (slug: string) => {
 
   return {
     userId: session.user.id,
+    userName: session.user.name ?? "",
+    userInitials: session.user.initials ?? "",
     workspace: membership.workspace,
     role: membership.role,
   };

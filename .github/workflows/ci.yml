@@ -8,11 +8,25 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: pass
+          POSTGRES_DB: content_os_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U user"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
-      # Build-time only — no live database is needed to lint, typecheck,
-      # unit-test, or build. Real Postgres-backed integration tests are a
-      # fast-follow that needs a CI Postgres service container.
-      DATABASE_URL: "postgresql://user:pass@localhost:5432/dummy"
+      # The lint/typecheck/build steps don't need a live database — only
+      # `npm run test` (some Server Action tests are DB-backed integration
+      # tests) exercises the postgres service above.
+      DATABASE_URL: "postgresql://user:pass@localhost:5432/content_os_test"
       AUTH_SECRET: "ci-only-dummy-secret"
     steps:
       - uses: actions/checkout@v4
@@ -27,6 +41,8 @@ jobs:
       - run: npm run lint
 
       - run: npx tsc --noEmit
+
+      - run: npx prisma migrate deploy
 
       - run: npm run test
 

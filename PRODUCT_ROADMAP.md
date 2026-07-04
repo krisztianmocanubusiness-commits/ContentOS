@@ -27,10 +27,37 @@ behind real workspace-scoped access control.
 - [x] Content list migrated to Server Components + Prisma (`src/lib/content-data.ts`,
       `src/app/(dashboard)/w/[workspaceSlug]/content/page.tsx`), with loading
       skeleton, empty state, and an error boundary with retry
-- [ ] Content detail sheet, comments, and review actions (approve / request
-      changes / submit for review) migrated to Server Actions — currently
-      still client-local optimistic state that resets on refresh
-- [ ] DB-backed integration tests + a Postgres service in CI
+- [x] Content detail sheet, comments, and review actions (approve / request
+      changes / submit for review) migrated to real Server Actions
+      (`src/lib/content-actions.ts`), backed by Postgres instead of
+      client-local optimistic state:
+      - Every action re-verifies workspace membership and role server-side
+        (`requireWorkspaceAccess` + `hasPermission`) and re-scopes the
+        content item by `workspaceId`, so a foreign or guessed content id
+        can't be mutated even if the client is compromised
+      - Status transitions (`submitForReviewAction`, `approveContentAction`,
+        `requestChangesAction`) use an atomic compare-and-swap
+        (`updateMany` gated on the expected current status) inside a
+        `prisma.$transaction`, so two reviewers acting on the same stale
+        view can't silently clobber each other — the loser gets a
+        "someone else updated this" conflict with a one-click Refresh
+        action instead of overwriting the winner's change
+      - A new `AuditLog` table (append-only, `AuditAction` enum:
+        submitted/approved/changes-requested/commented) records every
+        state-changing action with actor, timestamp, and metadata,
+        independent of the mutable domain rows the UI renders
+      - Comments are optimistic (instant append, rolled back on failure);
+        review actions show a pending state and only update the UI once
+        the database confirms, since silently un-approving something on
+        conflict would be more confusing than a short wait
+      - 20 Vitest integration tests against a real Postgres instance cover
+        authorization (per-role forbidden cases), tenant isolation
+        (cross-workspace access blocked), validation, conflict handling,
+        and a genuine concurrency race (two simultaneous submits — exactly
+        one wins, exactly one `ReviewEvent` row is created)
+      - CI now runs a real Postgres service container and applies
+        migrations before the test step, so these integration tests
+        actually execute on every push, not just locally
 - [ ] End-to-end verification pass: desktop + mobile, all roles, edge cases
 - [ ] Remaining pages still on mock data: Dashboard (recent content/upcoming
       widgets), Calendar, Analytics, Assets, Social Accounts, Inbox,
@@ -39,10 +66,11 @@ behind real workspace-scoped access control.
 ## Phase 2 — Earn Trust at Scale (not started)
 
 Planned: real-time collaboration correctness (optimistic UI + server
-reconciliation everywhere, not just Content), audit logging for approval
-actions, structured error tracking/observability, Redis-backed rate limiting
-(current in-memory limiter is a documented single-instance stopgap), background
-jobs for scheduled publishing, webhook-based social account sync.
+reconciliation everywhere, not just Content), structured error
+tracking/observability, Redis-backed rate limiting (current in-memory
+limiter is a documented single-instance stopgap), background jobs for
+scheduled publishing, webhook-based social account sync, an admin-facing
+view of the `AuditLog` table added in Phase 1.
 
 ## Phase 3 — Ready for 100,000 Creators (not started)
 
@@ -52,4 +80,4 @@ customers, public API, billing/plan enforcement tied to real usage.
 
 ---
 
-_Last updated: after migrating the Content list to Server Components + Prisma._
+_Last updated: after migrating Content review/comment actions to Server Actions._

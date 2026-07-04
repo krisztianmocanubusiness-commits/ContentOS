@@ -1,7 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -18,8 +21,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ContentFilters } from "@/components/content/content-filters";
 import { ContentDetailSheet } from "@/components/content/content-detail-sheet";
 import { PermissionButton } from "@/components/permissions/permission-button";
-import type { ContentItem, ContentStatus, Platform, ReviewAction } from "@/lib/mock-data";
-import { applyReviewAction } from "@/lib/review";
+import {
+  addCommentAction,
+  approveContentAction,
+  requestChangesAction,
+  submitForReviewAction,
+} from "@/lib/content-actions";
+import type { ContentItem, ContentStatus, Platform } from "@/lib/mock-data";
 import { statusVariant } from "@/lib/status";
 
 const filters: { label: string; status: ContentStatus | "All" }[] = [
@@ -31,17 +39,40 @@ const filters: { label: string; status: ContentStatus | "All" }[] = [
 ];
 
 export function ContentBoard({
+  workspaceSlug,
   workspaceName,
   initialItems,
 }: {
+  workspaceSlug: string;
   workspaceName: string;
   initialItems: ContentItem[];
 }) {
+  const router = useRouter();
+  const { data: session } = useSession();
   const [items, setItems] = React.useState(initialItems);
   const [search, setSearch] = React.useState("");
   const [platform, setPlatform] = React.useState<Platform | "All">("All");
   const [activeTag, setActiveTag] = React.useState<string | null>(null);
   const [selectedItemId, setSelectedItemId] = React.useState<string | null>(null);
+  const [isPending, startTransition] = React.useTransition();
+
+  // React doesn't reset local state just because a prop changed — this is
+  // the React-docs-sanctioned way to do it during render (not an effect),
+  // so a router.refresh() after a conflict (or any future server
+  // revalidation) actually replaces stale local items with the refetch.
+  const [prevInitialItems, setPrevInitialItems] = React.useState(initialItems);
+  if (initialItems !== prevInitialItems) {
+    setPrevInitialItems(initialItems);
+    setItems(initialItems);
+  }
+
+  function showErrorToast(message: string, code: "forbidden" | "not_found" | "invalid" | "conflict") {
+    if (code === "conflict") {
+      toast.error(message, { action: { label: "Refresh", onClick: () => router.refresh() } });
+    } else {
+      toast.error(message);
+    }
+  }
 
   const availableTags = React.useMemo(() => {
     const tags = new Set<string>();
@@ -65,47 +96,115 @@ export function ContentBoard({
   const selectedItem = items.find((item) => item.id === selectedItemId) ?? null;
 
   function addComment(itemId: string, body: string) {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId
-          ? {
-              ...item,
-              comments: [
-                ...item.comments,
-                {
-                  id: `${itemId}-c${item.comments.length + 1}`,
-                  author: "You",
-                  authorInitials: "YO",
-                  body,
-                  timestamp: "Just now",
-                },
-              ],
-            }
-          : item
-      )
-    );
-  }
+    const tempId = `temp-${crypto.randomUUID()}`;
+    const optimisticComment = {
+      id: tempId,
+      author: session?.user?.name ?? "You",
+      authorInitials: session?.user?.initials ?? "YO",
+      body,
+      timestamp: "Just now",
+    };
 
-  function logReviewEvent(itemId: string, action: ReviewAction, note?: string) {
     setItems((prev) =>
       prev.map((item) =>
         item.id === itemId
-          ? applyReviewAction(item, action, { name: "You", initials: "YO" }, { note })
+          ? { ...item, comments: [...item.comments, optimisticComment] }
           : item
       )
     );
+
+    startTransition(async () => {
+      const result = await addCommentAction(workspaceSlug, itemId, body);
+      if (result.ok) {
+        setItems((prev) =>
+          prev.map((item) =>
+            item.id === itemId
+              ? {
+                  ...item,
+                  comments: item.comments.map((comment) =>
+                    comment.id === tempId ? result.data : comment
+                  ),
+                }
+              : item
+          )
+        );
+      } else {
+        setItems((prev) =>
+          prev.map((item) =>
+            item.id === itemId
+              ? { ...item, comments: item.comments.filter((comment) => comment.id !== tempId) }
+              : item
+          )
+        );
+        showErrorToast(result.error, result.code);
+      }
+    });
   }
 
   function submitForReview(itemId: string) {
-    logReviewEvent(itemId, "submitted");
+    startTransition(async () => {
+      const result = await submitForReviewAction(workspaceSlug, itemId);
+      if (result.ok) {
+        setItems((prev) =>
+          prev.map((item) =>
+            item.id === itemId
+              ? {
+                  ...item,
+                  status: result.data.status,
+                  reviewHistory: [...item.reviewHistory, result.data.reviewEvent],
+                }
+              : item
+          )
+        );
+        toast.success("Submitted for review.");
+      } else {
+        showErrorToast(result.error, result.code);
+      }
+    });
   }
 
   function approveItem(itemId: string) {
-    logReviewEvent(itemId, "approved");
+    startTransition(async () => {
+      const result = await approveContentAction(workspaceSlug, itemId);
+      if (result.ok) {
+        setItems((prev) =>
+          prev.map((item) =>
+            item.id === itemId
+              ? {
+                  ...item,
+                  status: result.data.status,
+                  reviewHistory: [...item.reviewHistory, result.data.reviewEvent],
+                }
+              : item
+          )
+        );
+        toast.success("Approved and scheduled.");
+      } else {
+        showErrorToast(result.error, result.code);
+      }
+    });
   }
 
   function requestChanges(itemId: string, reason: string) {
-    logReviewEvent(itemId, "changes_requested", reason);
+    startTransition(async () => {
+      const result = await requestChangesAction(workspaceSlug, itemId, reason);
+      if (result.ok) {
+        setItems((prev) =>
+          prev.map((item) =>
+            item.id === itemId
+              ? {
+                  ...item,
+                  status: result.data.status,
+                  reviewHistory: [...item.reviewHistory, result.data.reviewEvent],
+                }
+              : item
+          )
+        );
+        toast.success("Changes requested.");
+      } else {
+        showErrorToast(result.error, result.code);
+      }
+    });
   }
 
   return (
@@ -267,6 +366,7 @@ export function ContentBoard({
       <ContentDetailSheet
         item={selectedItem}
         open={selectedItem !== null}
+        pending={isPending}
         onOpenChange={(open) => {
           if (!open) setSelectedItemId(null);
         }}

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, RotateCcw, Send } from "lucide-react";
+import { Check, Loader2, RotateCcw, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,11 +10,13 @@ import type { ContentItem } from "@/lib/mock-data";
 
 export function ApprovalActions({
   item,
+  pending = false,
   onSubmitForReview,
   onApprove,
   onRequestChanges,
 }: {
   item: ContentItem;
+  pending?: boolean;
   onSubmitForReview: () => void;
   onApprove: () => void;
   onRequestChanges: (reason: string) => void;
@@ -32,9 +34,10 @@ export function ApprovalActions({
           size="sm"
           variant="outline"
           className="h-11 w-full sm:h-8 sm:w-auto"
+          disabled={pending}
           onClick={onSubmitForReview}
         >
-          <Send />
+          {pending ? <Loader2 className="animate-spin" /> : <Send />}
           Submit for review
         </Button>
       </div>
@@ -59,12 +62,14 @@ export function ApprovalActions({
           onChange={(e) => setReason(e.target.value)}
           placeholder="What needs to change?"
           autoFocus
+          disabled={pending}
         />
         <div className="flex gap-2 sm:justify-end">
           <Button
             size="sm"
             variant="outline"
             className="h-11 flex-1 sm:h-8 sm:flex-none"
+            disabled={pending}
             onClick={() => {
               setRequestingChanges(false);
               setReason("");
@@ -76,14 +81,14 @@ export function ApprovalActions({
             size="sm"
             variant="destructive"
             className="h-11 flex-1 sm:h-8 sm:flex-none"
-            disabled={!reason.trim()}
+            disabled={!reason.trim() || pending}
             onClick={() => {
               onRequestChanges(reason.trim());
               setRequestingChanges(false);
               setReason("");
             }}
           >
-            <RotateCcw />
+            {pending ? <Loader2 className="animate-spin" /> : <RotateCcw />}
             Send back
           </Button>
         </div>
@@ -97,13 +102,19 @@ export function ApprovalActions({
         size="sm"
         variant="outline"
         className="h-11 flex-1 sm:h-8 sm:flex-none"
+        disabled={pending}
         onClick={() => setRequestingChanges(true)}
       >
         <RotateCcw />
         Request changes
       </Button>
-      <Button size="sm" className="h-11 flex-1 sm:h-8 sm:flex-none" onClick={onApprove}>
-        <Check />
+      <Button
+        size="sm"
+        className="h-11 flex-1 sm:h-8 sm:flex-none"
+        disabled={pending}
+        onClick={onApprove}
+      >
+        {pending ? <Loader2 className="animate-spin" /> : <Check />}
         Approve
       </Button>
     </div>

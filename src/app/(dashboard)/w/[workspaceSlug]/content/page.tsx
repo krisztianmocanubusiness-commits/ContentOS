@@ -11,5 +11,11 @@ export default async function ContentPage({
   const { workspace } = await requireWorkspaceAccess(workspaceSlug);
   const items = await getWorkspaceContent(workspace.id);
 
-  return <ContentBoard workspaceName={workspace.name} initialItems={items} />;
+  return (
+    <ContentBoard
+      workspaceSlug={workspaceSlug}
+      workspaceName={workspace.name}
+      initialItems={items}
+    />
+  );
 }
