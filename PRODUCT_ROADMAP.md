@@ -86,9 +86,47 @@ behind real workspace-scoped access control.
         `requireWorkspaceAccess` architecture extended to three new roles
         without any structural changes, which is itself a signal the
         original design was sound
-- [ ] Remaining pages still on mock data: Dashboard (recent content/upcoming
-      widgets), Calendar, Analytics, Assets, Social Accounts, Inbox,
-      Monetization, Team
+- [x] Dashboard migrated to Server Components + Prisma
+      (`src/lib/dashboard-data.ts`, fully server-rendered — no client
+      component needed at the page level, since every widget on this page
+      is read-only). Replaced the old fake analytics tiles (Total Reach /
+      Engagement Rate, from mock data unrelated to real content) with real
+      content-pipeline stats, and added every widget the redesign called
+      for:
+      - Status counts (Total / Drafts / In Review / Scheduled / Published)
+        via a single `groupBy` on `ContentItem.status`
+      - Recent content and Pending approvals — lean, dashboard-specific
+        queries selecting only the fields the widget renders (not the
+        full content-list shape with comments/review history/assets,
+        which would be wasted over-fetching for a 5-row preview)
+      - Recent activity (workspace-wide) and Notifications (teammates'
+        actions, excluding the signed-in user's own) both read from the
+        `AuditLog` table added in the previous slice
+      - Team activity: every member's role plus a "last active" timestamp
+        computed via a single `auditLog.groupBy(by: ['actorId'], _max:
+        {createdAt})` joined in memory against the membership list — not
+        one query per member, so it doesn't scale with team size
+      - Workspace statistics (plan, team member count, total content) —
+        reuses counts already fetched for other widgets rather than
+        re-querying
+      - Upcoming events, now read from the real `CalendarEvent` table
+        (seeded in the Phase 1 foundation, previously unused) instead of
+        mock data, without touching the Calendar page itself
+      - All 8 independent queries run in parallel via `Promise.all`;
+        the whole function is wrapped in React's `cache()` for per-request
+        dedup — deliberately *not* a persistent cross-request cache, since
+        every widget here changes on nearly every content action and a
+        stale "pending approvals" count would read as a bug
+      - 8 Vitest integration tests against real Postgres cover status
+        counts, pending approvals, the activity/notifications split,
+        team last-active, workspace stats, upcoming-event date filtering,
+        and — for every one of those — that a second workspace's data
+        never leaks in
+      - Verified empty states render correctly (no fake data) for a
+        workspace with zero content, zero activity, and a single member,
+        and that the loading skeleton and error boundary both fire
+- [ ] Remaining pages still on mock data: Calendar, Analytics, Assets,
+      Social Accounts, Inbox, Monetization, Team
 
 ## Phase 2 — Earn Trust at Scale (not started)
 
@@ -107,4 +145,4 @@ customers, public API, billing/plan enforcement tied to real usage.
 
 ---
 
-_Last updated: after the 7-role permission expansion and end-to-end role/tenant-isolation verification pass._
+_Last updated: after migrating the Dashboard to Server Components + Prisma._
