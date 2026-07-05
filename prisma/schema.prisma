@@ -120,6 +120,7 @@ model WorkspaceMembership {
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  auditLogs AuditLog[]
 
   @@unique([userId, workspaceId])
   @@index([workspaceId])
@@ -268,6 +269,9 @@ enum AuditAction {
   CalendarEventUpdated
   CalendarEventRescheduled
   CalendarEventDeleted
+  TeamMemberInvited
+  TeamMemberRoleChanged
+  TeamMemberRemoved
 }
 
 /**
@@ -277,21 +281,24 @@ enum AuditAction {
  * status changes, and comments all have a durable trail from day one.
  */
 model AuditLog {
-  id             String         @id
-  workspaceId    String
-  contentItemId  String?
-  calendarEventId String?
-  actorId        String
-  actorName      String
-  action         AuditAction
-  metadata       Json?
-  createdAt      DateTime       @default(now())
+  id                    String   @id
+  workspaceId           String
+  contentItemId         String?
+  calendarEventId       String?
+  workspaceMembershipId String?
+  actorId               String
+  actorName             String
+  action                AuditAction
+  metadata              Json?
+  createdAt             DateTime @default(now())
 
-  workspace     Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  contentItem   ContentItem?   @relation(fields: [contentItemId], references: [id], onDelete: SetNull)
-  calendarEvent CalendarEvent? @relation(fields: [calendarEventId], references: [id], onDelete: SetNull)
+  workspace           Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contentItem         ContentItem?         @relation(fields: [contentItemId], references: [id], onDelete: SetNull)
+  calendarEvent       CalendarEvent?       @relation(fields: [calendarEventId], references: [id], onDelete: SetNull)
+  workspaceMembership WorkspaceMembership? @relation(fields: [workspaceMembershipId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId])
   @@index([contentItemId])
   @@index([calendarEventId])
+  @@index([workspaceMembershipId])
 }

@@ -40,6 +40,9 @@ const ACTIVITY_LABEL: Record<AuditAction, string> = {
   [AuditAction.CalendarEventUpdated]: "updated",
   [AuditAction.CalendarEventRescheduled]: "rescheduled",
   [AuditAction.CalendarEventDeleted]: "deleted",
+  [AuditAction.TeamMemberInvited]: "invited a teammate",
+  [AuditAction.TeamMemberRoleChanged]: "changed a teammate's role",
+  [AuditAction.TeamMemberRemoved]: "removed a teammate",
 };
 
 export type DashboardActivityEntry = {

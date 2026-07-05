@@ -212,8 +212,63 @@ behind real workspace-scoped access control.
         `/w/buildible/analytics` gets a 404, not just an authorized
         Owner's legitimate access to both workspaces), and the loading
         skeleton / error boundary both firing correctly
+- [x] Team migrated to Server Components + Prisma
+      (`src/lib/team-data.ts` for reads, `src/lib/team-actions.ts` for
+      writes). This page had zero persistence before — invite, role
+      change, and remove all only mutated client-side React state and
+      were lost on refresh — so this slice built the real thing, not
+      just a data swap:
+      - `getWorkspaceTeamMembers` reads real members/roles/status from
+        `WorkspaceMembership`, with last-activity keyed off
+        `AuditLog.actorId` (the only FK-backed actor identity in the
+        schema) in a single `groupBy`, not a per-member query
+      - Three new Server Actions — `inviteMemberAction`,
+        `changeRoleAction`, `removeMemberAction` — each re-verifying the
+        `manageTeam` permission server-side (the client's "viewing as"
+        role-preview selector is a demo aid only, never trusted for
+        enforcement) and re-scoping the target membership by
+        `workspaceId` before mutating
+      - Because `WorkspaceMembership.userId` is a required FK, inviting
+        someone always creates a real `User` row (reusing one if that
+        email already has an account elsewhere) — there's no
+        accept-invite/set-password flow yet, so a brand-new invitee's
+        account has an unusable placeholder password until that's built
+        (tracked in `TECH_DEBT.md`)
+      - Final-owner protection: role changes and removals that would
+        leave a workspace with zero Active Owners are blocked, checked
+        inside a `Serializable`-isolation transaction so two concurrent
+        demotions/removals of a workspace's last two Owners can't both
+        succeed and leave none — covered by a dedicated concurrency test
+      - Self-role-edit protection: changing your own role or removing
+        yourself is blocked outright, even for an Owner with co-owners —
+        a stronger, simpler rule than only guarding the last-owner case,
+        since any self-edit through this endpoint is a conflict of
+        interest a teammate should perform instead
+      - `AuditLog` gained a `workspaceMembershipId` column (`onDelete:
+        SetNull`, same pattern as `contentItemId`/`calendarEventId`) and
+        three new `AuditAction` values (`TeamMemberInvited`,
+        `TeamMemberRoleChanged`, `TeamMemberRemoved`) — removing a
+        member keeps their name/email/role readable in `metadata` after
+        the FK nulls out, and the Dashboard's activity feed now narrates
+        these events too
+      - Remove now has an inline "are you sure" confirmation (desktop:
+        the row's action cell swaps to Cancel/Remove; mobile: the same
+        pattern already used by the Calendar's delete-post flow) — the
+        old mock UI removed a member on a single click with no
+        confirmation at all
+      - 23 Vitest integration tests against real Postgres cover every
+        action's permission gating, tenant isolation, final-owner
+        protection (including the two-concurrent-owners race), and
+        self-edit blocking; 3 more cover the data layer's correctness
+        and isolation
+      - Verified desktop and mobile: inviting a member, changing a
+        role, removing a member, all persisting across a reload; a
+        Viewer sees no management controls; an Owner's own row has no
+        editable role/remove control; true tenant isolation (a
+        Keris-only user hitting `/w/buildible/team` gets a 404); and the
+        loading skeleton / error boundary both firing correctly
 - [ ] Remaining pages still on mock data: Assets, Social Accounts, Inbox,
-      Monetization, Team
+      Monetization
 
 ## Phase 2 — Earn Trust at Scale (not started)
 
@@ -232,4 +287,4 @@ customers, public API, billing/plan enforcement tied to real usage.
 
 ---
 
-_Last updated: after migrating the Calendar to Server Components + Prisma._
+_Last updated: after migrating the Team page to Server Components + Prisma._

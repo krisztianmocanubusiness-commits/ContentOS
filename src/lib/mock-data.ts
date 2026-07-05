@@ -269,37 +269,6 @@ export type TeamRole =
   | "Analyst"
   | "Viewer";
 
-export type TeamMember = {
-  id: string;
-  workspaceId: string;
-  name: string;
-  email: string;
-  role: TeamRole;
-  status: "Active" | "Invited";
-  initials: string;
-};
-
-export const teamMembers: TeamMember[] = [
-  { id: "t1", workspaceId: "keris", name: "Krisztián Mocanu", email: "demo@contentos.dev", role: "Owner", status: "Active", initials: "KM" },
-  { id: "t2", workspaceId: "keris", name: "Ava Reyes", email: "ava@keris.co", role: "Admin", status: "Active", initials: "AR" },
-  { id: "t2b", workspaceId: "keris", name: "Nadia Torres", email: "nadia@keris.co", role: "Manager", status: "Active", initials: "NT" },
-  { id: "t3", workspaceId: "keris", name: "Mila Chen", email: "mila@keris.co", role: "Editor", status: "Active", initials: "MC" },
-  { id: "t3b", workspaceId: "keris", name: "Oscar Bennett", email: "oscar@keris.co", role: "Moderator", status: "Active", initials: "OB" },
-  { id: "t3c", workspaceId: "keris", name: "Tara Singh", email: "tara@keris.co", role: "Analyst", status: "Active", initials: "TS" },
-  { id: "t3d", workspaceId: "keris", name: "Victor Alvarez", email: "victor@keris.co", role: "Viewer", status: "Active", initials: "VA" },
-
-  { id: "t4", workspaceId: "buildible", name: "Krisztián Mocanu", email: "demo@contentos.dev", role: "Owner", status: "Active", initials: "KM" },
-  { id: "t5", workspaceId: "buildible", name: "Sam Kim", email: "sam@buildible.com", role: "Editor", status: "Active", initials: "SK" },
-  { id: "t6", workspaceId: "buildible", name: "Leo Dupont", email: "leo@buildible.com", role: "Editor", status: "Invited", initials: "LD" },
-  { id: "t7", workspaceId: "buildible", name: "Priya Nair", email: "priya@buildible.com", role: "Viewer", status: "Active", initials: "PN" },
-
-  { id: "t8", workspaceId: "personal", name: "Krisztián Mocanu", email: "demo@contentos.dev", role: "Owner", status: "Active", initials: "KM" },
-];
-
-export function teamMembersForWorkspace(workspaceId: string) {
-  return teamMembers.filter((member) => member.workspaceId === workspaceId);
-}
-
 export type InboxMessage = {
   id: string;
   from: "them" | "you";
