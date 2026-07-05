@@ -42,3 +42,7 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# local object-storage backend (see src/lib/storage) — dev/test only,
+# never used when R2 env vars are configured
+/.storage

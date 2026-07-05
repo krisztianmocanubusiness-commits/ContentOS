@@ -267,7 +267,83 @@ behind real workspace-scoped access control.
         editable role/remove control; true tenant isolation (a
         Keris-only user hitting `/w/buildible/team` gets a 404); and the
         loading skeleton / error boundary both firing correctly
-- [ ] Remaining pages still on mock data: Assets, Social Accounts, Inbox,
+- [x] Assets migrated to Server Components + Prisma, with a real object
+      storage backend
+      (`src/lib/asset-data.ts` for reads, `src/lib/asset-actions.ts` for
+      metadata writes, `src/lib/storage/` for file bytes). This is the
+      first migration that's genuinely new infrastructure, not just a
+      Prisma query swap — the old `Asset` model had no file-related
+      columns at all (`sizeLabel` was a made-up string, no bytes existed
+      anywhere):
+      - New `src/lib/storage/` module: a small `StorageAdapter` interface
+        (`put`/`get`/`delete`, keys and bytes only — no workspace/asset
+        business logic) with two implementations — `LocalDiskStorageAdapter`
+        (default; writes under a gitignored `.storage/` directory, the
+        only backend usable in this sandbox since no real bucket exists)
+        and `R2StorageAdapter` (Cloudflare R2 via its S3-compatible API,
+        selected automatically when `R2_ACCOUNT_ID`/`R2_ACCESS_KEY_ID`/
+        `R2_SECRET_ACCESS_KEY`/`R2_BUCKET_NAME` are set — see
+        `.env.example`). Swapping backends is an env var change, not a
+        code change.
+      - `Asset` gained real columns: `storageKey`, `thumbnailKey`,
+        `mimeType`, `byteSize`, `status` (`Active`/`Deleted`, for
+        soft-delete), `deletedAt`, and a deliberately open `metadata Json?`
+        bucket — so a future AI feature (transcripts, embeddings,
+        extracted labels) can attach derived data to an asset without
+        another migration, reading the file via the same storage
+        adapter's `get(storageKey)` any other code path uses.
+      - Upload goes through a Route Handler
+        (`POST /api/assets/[workspaceSlug]/upload`), not a Server Action —
+        Next's Server Actions cap request bodies at 1MB by default, a
+        non-starter for video/document uploads. Files are read into
+        memory once, capped at 50MB (`MAX_UPLOAD_BYTES`), and handed to
+        the storage adapter; see `TECH_DEBT.md` for the scaling
+        implications of that tradeoff.
+      - Image uploads get a real thumbnail (`sharp`, resized to fit
+        400×400, WebP) stored as a sibling object; video/audio/document
+        assets fall back to the existing type icon — no thumbnail
+        fabricated for types that don't have one.
+      - Both the original file and thumbnails are served through
+        authenticated Route Handlers
+        (`GET /api/assets/file/[assetId]`, `.../thumbnail/[assetId]`)
+        that re-derive "does the caller belong to this asset's
+        workspace" the same way `requireWorkspaceAccess` does for
+        slug-based routes — bytes are never exposed via a public bucket
+        URL, so there's no CSP change needed (everything is same-origin).
+      - Delete is soft: `status` flips to `Deleted` (with a visible
+        Trash view and a Restore action), not a hard row/file delete —
+        matching "audit-logged restore" being a real, user-facing
+        action. Renaming, moving, and tag edits are separate audited
+        actions (`AssetRenamed`, `AssetMoved`, `AssetTagsChanged`),
+        distinct from `AssetUploaded`/`AssetDeleted`/`AssetRestored`,
+        matching the codebase's existing granular-verb audit style.
+      - Fixed a real correctness bug surfaced by this migration:
+        `ContentItem.assetIds` (a mock-shaped string-id array) was being
+        looked up against the *mock* `assets` array via `assetById` in
+        the content detail sheet's "Linked assets" section — since real
+        content items reference real (UUID) asset ids, that lookup could
+        never match, so this section was silently dead for any
+        real content. `content-data.ts` now selects real asset
+        name/type through the existing Prisma many-to-many relation and
+        `ContentItem.linkedAssets` carries that directly, no id lookup.
+      - Manage-asset actions (upload, rename, move, tag edit, delete,
+        restore) all gate on the existing `createContent` permission
+        (labeled "Create content & assets" already) rather than adding a
+        new permission — Owner/Admin/Manager/Editor/Moderator can manage
+        assets, Analyst/Viewer cannot, matching the pre-migration UI's
+        own gating of the Upload button.
+      - 27 Vitest integration tests (data layer, actions, and a
+        filesystem-only unit test for the local-disk storage adapter)
+        cover filtering, tenant isolation, permission gating, soft-delete/
+        restore state transitions, and audit log correctness.
+      - Verified desktop and mobile: uploading a real file (with
+        progress), a generated thumbnail actually rendering, rename/
+        move/tag-edit all persisting, delete moving an asset to Trash
+        and restore bringing it back, a Viewer seeing no management
+        controls, true tenant isolation (a Keris-only user hitting
+        `/w/buildible/assets` gets a 404), and the loading skeleton /
+        error boundary both firing correctly.
+- [ ] Remaining pages still on mock data: Social Accounts, Inbox,
       Monetization
 
 ## Phase 2 — Earn Trust at Scale (not started)
@@ -287,4 +363,4 @@ customers, public API, billing/plan enforcement tied to real usage.
 
 ---
 
-_Last updated: after migrating the Team page to Server Components + Prisma._
+_Last updated: after migrating the Assets page to Server Components + Prisma._

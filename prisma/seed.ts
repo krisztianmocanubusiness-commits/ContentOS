@@ -1,8 +1,37 @@
 import "dotenv/config";
 
+import { promises as fsp } from "node:fs";
+import path from "node:path";
+
 import bcrypt from "bcryptjs";
+import sharp from "sharp";
 
 import { prisma } from "../src/lib/prisma";
+
+// Mirrors src/lib/storage/local-disk-adapter.ts's key layout — seeding
+// can't import that module (it's "server-only", which throws outside a
+// React Server Component context, including this plain script) so it
+// writes to the same directory directly instead.
+const STORAGE_ROOT = path.resolve(process.env.LOCAL_STORAGE_DIR || path.join(process.cwd(), ".storage"));
+
+async function writeSeedFile(key: string, data: Buffer) {
+  const filePath = path.join(STORAGE_ROOT, key);
+  await fsp.mkdir(path.dirname(filePath), { recursive: true });
+  await fsp.writeFile(filePath, data);
+}
+
+// A real (if tiny) 1x1 transparent PNG, so sharp can actually generate a thumbnail from it.
+const PNG_1PX = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+  "base64"
+);
+
+const MIME_BY_ASSET_TYPE: Record<string, string> = {
+  Image: "image/png",
+  Video: "video/mp4",
+  Audio: "audio/wav",
+  Document: "application/pdf",
+};
 
 const YEAR = 2026;
 const MONTHS: Record<string, number> = {
@@ -87,22 +116,48 @@ async function main() {
     await prisma.workspaceMembership.upsert({ where: { id: membership.id }, update: membership, create: membership });
   }
 
+  // Real (tiny) placeholder files written to local storage, not fabricated
+  // size labels — every seeded asset can actually be downloaded/previewed
+  // through the same code path a real upload uses.
   const assets = [
-    { id: "a1", workspaceId: "keris", name: "morning-routine-final.mp4", type: "Video" as const, sizeLabel: "96.2 MB", date: "Jun 28", folder: "Reels & Videos", tags: ["morning-routine", "reel"] },
-    { id: "a2", workspaceId: "keris", name: "brand-moodboard.png", type: "Image" as const, sizeLabel: "3.1 MB", date: "Jun 29", folder: "Brand Assets", tags: ["moodboard", "branding"] },
-    { id: "a3", workspaceId: "keris", name: "podcast-intro.wav", type: "Audio" as const, sizeLabel: "4.8 MB", date: "Jun 30", folder: "Podcast", tags: ["podcast", "intro"] },
-    { id: "a4", workspaceId: "keris", name: "media-kit-2026.pdf", type: "Document" as const, sizeLabel: "2.4 MB", date: "Jul 1", folder: "Press Kit", tags: ["press", "media-kit"] },
-    { id: "a5", workspaceId: "buildible", name: "product-demo-v2.mp4", type: "Video" as const, sizeLabel: "118 MB", date: "Jun 27", folder: "Product Demos", tags: ["demo", "automations"] },
-    { id: "a6", workspaceId: "buildible", name: "case-study-nova-retail.pdf", type: "Document" as const, sizeLabel: "1.6 MB", date: "Jun 29", folder: "Case Studies", tags: ["case-study", "nova-retail"] },
-    { id: "a7", workspaceId: "buildible", name: "logo-lockup-dark.png", type: "Image" as const, sizeLabel: "340 KB", date: "Jun 30", folder: "Brand Assets", tags: ["logo", "branding"] },
-    { id: "a8", workspaceId: "buildible", name: "founder-interview.wav", type: "Audio" as const, sizeLabel: "8.2 MB", date: "Jul 1", folder: "Interviews", tags: ["interview", "founder"] },
+    { id: "a1", workspaceId: "keris", name: "morning-routine-final.mp4", type: "Video" as const, date: "Jun 28", folder: "Reels & Videos", tags: ["morning-routine", "reel"] },
+    { id: "a2", workspaceId: "keris", name: "brand-moodboard.png", type: "Image" as const, date: "Jun 29", folder: "Brand Assets", tags: ["moodboard", "branding"] },
+    { id: "a3", workspaceId: "keris", name: "podcast-intro.wav", type: "Audio" as const, date: "Jun 30", folder: "Podcast", tags: ["podcast", "intro"] },
+    { id: "a4", workspaceId: "keris", name: "media-kit-2026.pdf", type: "Document" as const, date: "Jul 1", folder: "Press Kit", tags: ["press", "media-kit"] },
+    { id: "a5", workspaceId: "buildible", name: "product-demo-v2.mp4", type: "Video" as const, date: "Jun 27", folder: "Product Demos", tags: ["demo", "automations"] },
+    { id: "a6", workspaceId: "buildible", name: "case-study-nova-retail.pdf", type: "Document" as const, date: "Jun 29", folder: "Case Studies", tags: ["case-study", "nova-retail"] },
+    { id: "a7", workspaceId: "buildible", name: "logo-lockup-dark.png", type: "Image" as const, date: "Jun 30", folder: "Brand Assets", tags: ["logo", "branding"] },
+    { id: "a8", workspaceId: "buildible", name: "founder-interview.wav", type: "Audio" as const, date: "Jul 1", folder: "Interviews", tags: ["interview", "founder"] },
   ];
   for (const { date, ...asset } of assets) {
-    await prisma.asset.upsert({
-      where: { id: asset.id },
-      update: { ...asset, createdAt: shortDate(date) },
-      create: { ...asset, createdAt: shortDate(date) },
-    });
+    const placeholder =
+      asset.type === "Image" ? PNG_1PX : Buffer.from(`Seed placeholder for ${asset.name}`, "utf8");
+    const storageKey = `${asset.workspaceId}/${asset.id}/original`;
+    await writeSeedFile(storageKey, placeholder);
+
+    let thumbnailKey: string | null = null;
+    if (asset.type === "Image") {
+      const thumbnail = await sharp(placeholder)
+        .resize(400, 400, { fit: "inside" })
+        .webp({ quality: 80 })
+        .toBuffer();
+      thumbnailKey = `${asset.workspaceId}/${asset.id}/thumbnail.webp`;
+      await writeSeedFile(thumbnailKey, thumbnail);
+    }
+
+    const row = {
+      name: asset.name,
+      workspaceId: asset.workspaceId,
+      type: asset.type,
+      folder: asset.folder,
+      tags: asset.tags,
+      storageKey,
+      thumbnailKey,
+      mimeType: MIME_BY_ASSET_TYPE[asset.type],
+      byteSize: placeholder.byteLength,
+      createdAt: shortDate(date),
+    };
+    await prisma.asset.upsert({ where: { id: asset.id }, update: row, create: { id: asset.id, ...row } });
   }
 
   const content = [

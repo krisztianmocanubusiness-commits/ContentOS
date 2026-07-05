@@ -188,20 +188,40 @@ model CalendarEvent {
   @@index([workspaceId])
 }
 
+enum AssetStatus {
+  Active
+  Deleted
+}
+
+/**
+ * Real file metadata — storageKey/thumbnailKey point at objects in the
+ * configured object storage backend (src/lib/storage), never at bytes in
+ * this table. `metadata` is a deliberately open Json bucket so future
+ * AI features (transcripts, embeddings, extracted labels, dimensions)
+ * can attach derived data to an asset without another migration.
+ */
 model Asset {
-  id          String   @id
-  workspaceId String
-  name        String
-  type        AssetType
-  sizeLabel   String
-  folder      String
-  tags        String[]
-  createdAt   DateTime @default(now())
+  id           String      @id
+  workspaceId  String
+  name         String
+  type         AssetType
+  folder       String
+  tags         String[]
+  storageKey   String
+  thumbnailKey String?
+  mimeType     String
+  byteSize     Int
+  status       AssetStatus @default(Active)
+  deletedAt    DateTime?
+  metadata     Json?
+  createdAt    DateTime    @default(now())
 
   workspace Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   content   ContentItem[]
+  auditLogs AuditLog[]
 
   @@index([workspaceId])
+  @@index([workspaceId, status])
 }
 
 model SocialAccount {
@@ -272,6 +292,12 @@ enum AuditAction {
   TeamMemberInvited
   TeamMemberRoleChanged
   TeamMemberRemoved
+  AssetUploaded
+  AssetRenamed
+  AssetTagsChanged
+  AssetMoved
+  AssetDeleted
+  AssetRestored
 }
 
 /**
@@ -286,6 +312,7 @@ model AuditLog {
   contentItemId         String?
   calendarEventId       String?
   workspaceMembershipId String?
+  assetId               String?
   actorId               String
   actorName             String
   action                AuditAction
@@ -296,9 +323,11 @@ model AuditLog {
   contentItem         ContentItem?         @relation(fields: [contentItemId], references: [id], onDelete: SetNull)
   calendarEvent       CalendarEvent?       @relation(fields: [calendarEventId], references: [id], onDelete: SetNull)
   workspaceMembership WorkspaceMembership? @relation(fields: [workspaceMembershipId], references: [id], onDelete: SetNull)
+  asset               Asset?               @relation(fields: [assetId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId])
   @@index([contentItemId])
   @@index([calendarEventId])
   @@index([workspaceMembershipId])
+  @@index([assetId])
 }

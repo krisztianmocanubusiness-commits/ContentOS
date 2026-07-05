@@ -1,8 +1,8 @@
 import { FileText, Image as ImageIcon, Music, Video, type LucideIcon } from "lucide-react";
 
-import type { Asset } from "@/lib/mock-data";
+import type { AssetType } from "@/lib/asset-types";
 
-export const assetTypeIcon: Record<Asset["type"], LucideIcon> = {
+export const assetTypeIcon: Record<AssetType, LucideIcon> = {
   Image: ImageIcon,
   Video: Video,
   Audio: Music,

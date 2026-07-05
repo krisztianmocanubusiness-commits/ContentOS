@@ -16,3 +16,14 @@ export function formatRelativeTime(date: Date, now: Date = new Date()): string {
   if (diff < 7 * DAY) return `${Math.floor(diff / DAY)}d ago`;
   return formatShortDate(date);
 }
+
+/** "340 KB" / "96.2 MB", matching the display style the old mock asset sizes used. */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${Math.round(kb)} KB`;
+  const mb = kb / 1024;
+  if (mb < 1024) return `${mb.toFixed(1)} MB`;
+  const gb = mb / 1024;
+  return `${gb.toFixed(1)} GB`;
+}

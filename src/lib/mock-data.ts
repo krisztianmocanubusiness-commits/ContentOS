@@ -1,3 +1,5 @@
+import type { AssetType } from "@/lib/asset-types";
+
 export type Workspace = {
   id: string;
   slug: string;
@@ -45,7 +47,7 @@ export type ContentItem = {
   /** Caption / script / post body. */
   body: string;
   tags: string[];
-  assetIds: string[];
+  linkedAssets: { id: string; name: string; type: AssetType }[];
   comments: ContentComment[];
   reviewHistory: ReviewEvent[];
 };
@@ -57,7 +59,7 @@ export const contentItems: ContentItem[] = [
     author: "Krisztián M.", authorInitials: "KM",
     body: "POV: 5am alarm hits and you still choose the sunrise walk. Full routine — cold plunge, journaling, matcha — link in bio for the journal I use.",
     tags: ["reel", "morning-routine", "lifestyle"],
-    assetIds: ["a1"],
+    linkedAssets: [{ id: "a1", name: "morning-routine-final.mp4", type: "Video" }],
     comments: [],
     reviewHistory: [],
   },
@@ -66,7 +68,7 @@ export const contentItems: ContentItem[] = [
     author: "Ava R.", authorInitials: "AR",
     body: "5 ways to style one blazer for fall. Swipe for the thrifted vs. new breakdown 👗",
     tags: ["ootd", "carousel", "fashion"],
-    assetIds: [],
+    linkedAssets: [],
     comments: [
       { id: "cm1", author: "Ava Reyes", authorInitials: "AR", body: "Can we get the studio shots re-edited with warmer tones before this goes out?", timestamp: "1d ago" },
     ],
@@ -77,7 +79,7 @@ export const contentItems: ContentItem[] = [
     author: "Mila Chen", authorInitials: "MC",
     body: "Recap carousel from last night's Live — answering your top 10 questions about the skincare routine, the move, and what's next for the podcast.",
     tags: ["live", "qna", "community"],
-    assetIds: [],
+    linkedAssets: [],
     comments: [
       { id: "cm2", author: "Krisztián Mocanu", authorInitials: "KM", body: "Love this — can we swap slide 4 to lead with the podcast announcement instead?", timestamp: "3h ago" },
       { id: "cm3", author: "Mila Chen", authorInitials: "MC", body: "Good call, updating now.", timestamp: "2h ago" },
@@ -91,7 +93,7 @@ export const contentItems: ContentItem[] = [
     author: "Krisztián M.", authorInitials: "KM",
     body: "June favorites: the skincare that finally cleared me up, a book I couldn't put down, and the gadget everyone's been asking about.",
     tags: ["youtube", "monthly-recap"],
-    assetIds: [],
+    linkedAssets: [],
     comments: [],
     reviewHistory: [],
   },
@@ -100,7 +102,7 @@ export const contentItems: ContentItem[] = [
     author: "Ava R.", authorInitials: "AR",
     body: "A thread on the 9 days in Lisbon that changed how I think about slow travel 🧵",
     tags: ["thread", "travel"],
-    assetIds: [],
+    linkedAssets: [],
     comments: [],
     reviewHistory: [],
   },
@@ -111,7 +113,7 @@ export const contentItems: ContentItem[] = [
     author: "Sam K.", authorInitials: "SK",
     body: "v2.4 is live: workspace-level automations, faster CSV exports, and a redesigned settings panel. Full changelog in the comments.",
     tags: ["product", "changelog", "release"],
-    assetIds: [],
+    linkedAssets: [],
     comments: [],
     reviewHistory: [],
   },
@@ -120,7 +122,7 @@ export const contentItems: ContentItem[] = [
     author: "Leo D.", authorInitials: "LD",
     body: "How Nova Retail cut their content approval time by 60% using Buildible's workflow automations — full case study.",
     tags: ["case-study", "customer-story"],
-    assetIds: ["a6"],
+    linkedAssets: [{ id: "a6", name: "case-study-nova-retail.pdf", type: "Document" }],
     comments: [
       { id: "cm4", author: "Krisztián Mocanu", authorInitials: "KM", body: "Great write-up — let's get a quote from their VP of Marketing before we publish.", timestamp: "5h ago" },
     ],
@@ -133,7 +135,7 @@ export const contentItems: ContentItem[] = [
     author: "Priya N.", authorInitials: "PN",
     body: "3-minute walkthrough of the new automations builder — trigger, condition, action, done.",
     tags: ["demo", "automations", "feature"],
-    assetIds: ["a5"],
+    linkedAssets: [{ id: "a5", name: "product-demo-v2.mp4", type: "Video" }],
     comments: [],
     reviewHistory: [],
   },
@@ -142,7 +144,7 @@ export const contentItems: ContentItem[] = [
     author: "Leo D.", authorInitials: "LD",
     body: "How we rebuilt our webhook delivery system for 10x throughput — a thread on the architecture decisions.",
     tags: ["engineering", "technical"],
-    assetIds: [],
+    linkedAssets: [],
     comments: [],
     reviewHistory: [],
   },
@@ -151,7 +153,7 @@ export const contentItems: ContentItem[] = [
     author: "Sam K.", authorInitials: "SK",
     body: "Introducing native integrations with the tools you already use — Slack, Notion, and Zapier, live today.",
     tags: ["integration", "launch", "announcement"],
-    assetIds: ["a7"],
+    linkedAssets: [{ id: "a7", name: "logo-lockup-dark.png", type: "Image" }],
     comments: [],
     reviewHistory: [],
   },
@@ -169,33 +171,6 @@ export type CalendarEvent = {
   title: string;
   platform: Platform;
 };
-
-export type AssetType = "Image" | "Video" | "Audio" | "Document";
-
-export type Asset = {
-  id: string;
-  workspaceId: string;
-  name: string;
-  type: AssetType;
-  size: string;
-  date: string;
-  folder: string;
-  tags: string[];
-};
-
-export const assets: Asset[] = [
-  { id: "a1", workspaceId: "keris", name: "morning-routine-final.mp4", type: "Video", size: "96.2 MB", date: "Jun 28", folder: "Reels & Videos", tags: ["morning-routine", "reel"] },
-  { id: "a2", workspaceId: "keris", name: "brand-moodboard.png", type: "Image", size: "3.1 MB", date: "Jun 29", folder: "Brand Assets", tags: ["moodboard", "branding"] },
-  { id: "a3", workspaceId: "keris", name: "podcast-intro.wav", type: "Audio", size: "4.8 MB", date: "Jun 30", folder: "Podcast", tags: ["podcast", "intro"] },
-  { id: "a4", workspaceId: "keris", name: "media-kit-2026.pdf", type: "Document", size: "2.4 MB", date: "Jul 1", folder: "Press Kit", tags: ["press", "media-kit"] },
-
-  { id: "a5", workspaceId: "buildible", name: "product-demo-v2.mp4", type: "Video", size: "118 MB", date: "Jun 27", folder: "Product Demos", tags: ["demo", "automations"] },
-  { id: "a6", workspaceId: "buildible", name: "case-study-nova-retail.pdf", type: "Document", size: "1.6 MB", date: "Jun 29", folder: "Case Studies", tags: ["case-study", "nova-retail"] },
-  { id: "a7", workspaceId: "buildible", name: "logo-lockup-dark.png", type: "Image", size: "340 KB", date: "Jun 30", folder: "Brand Assets", tags: ["logo", "branding"] },
-  { id: "a8", workspaceId: "buildible", name: "founder-interview.wav", type: "Audio", size: "8.2 MB", date: "Jul 1", folder: "Interviews", tags: ["interview", "founder"] },
-
-  // Personal — intentionally empty
-];
 
 export type SocialAccount = {
   id: string;
@@ -235,25 +210,6 @@ export function tagsForWorkspace(workspaceId: string): string[] {
     for (const tag of item.tags) tags.add(tag);
   }
   return Array.from(tags).sort();
-}
-
-export function assetsForWorkspace(workspaceId: string) {
-  return assets.filter((asset) => asset.workspaceId === workspaceId);
-}
-
-export function assetById(id: string) {
-  return assets.find((asset) => asset.id === id);
-}
-
-export function foldersForWorkspace(workspaceId: string): string[] {
-  const folders = new Set<string>();
-  for (const asset of assetsForWorkspace(workspaceId)) folders.add(asset.folder);
-  return Array.from(folders).sort();
-}
-
-/** Content items that link this asset via ContentItem.assetIds. */
-export function contentUsingAsset(assetId: string) {
-  return contentItems.filter((item) => item.assetIds.includes(assetId));
 }
 
 export function socialAccountsForWorkspace(workspaceId: string) {

@@ -43,6 +43,12 @@ const ACTIVITY_LABEL: Record<AuditAction, string> = {
   [AuditAction.TeamMemberInvited]: "invited a teammate",
   [AuditAction.TeamMemberRoleChanged]: "changed a teammate's role",
   [AuditAction.TeamMemberRemoved]: "removed a teammate",
+  [AuditAction.AssetUploaded]: "uploaded",
+  [AuditAction.AssetRenamed]: "renamed",
+  [AuditAction.AssetTagsChanged]: "retagged",
+  [AuditAction.AssetMoved]: "moved",
+  [AuditAction.AssetDeleted]: "deleted",
+  [AuditAction.AssetRestored]: "restored",
 };
 
 export type DashboardActivityEntry = {

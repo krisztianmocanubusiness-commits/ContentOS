@@ -2,6 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import { formatRelativeTime, formatShortDate } from "@/lib/format";
+import type { AssetType } from "@/lib/asset-types";
 import type { ContentItem, ContentStatus } from "@/lib/mock-data";
 import { ContentStatus as DbContentStatus } from "@/generated/prisma/enums";
 
@@ -26,7 +27,7 @@ export async function getWorkspaceContent(workspaceId: string): Promise<ContentI
     where: { workspaceId },
     orderBy: { createdAt: "asc" },
     include: {
-      assets: { select: { id: true } },
+      assets: { select: { id: true, name: true, type: true } },
       comments: { orderBy: { createdAt: "asc" } },
       reviewEvents: { orderBy: { createdAt: "asc" } },
     },
@@ -43,7 +44,7 @@ export async function getWorkspaceContent(workspaceId: string): Promise<ContentI
     authorInitials: row.authorInitials,
     body: row.body,
     tags: row.tags,
-    assetIds: row.assets.map((asset) => asset.id),
+    linkedAssets: row.assets.map((asset) => ({ id: asset.id, name: asset.name, type: asset.type as AssetType })),
     comments: row.comments.map((comment) => ({
       id: comment.id,
       author: comment.author,

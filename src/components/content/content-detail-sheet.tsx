@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { ApprovalActions } from "@/components/content/approval-actions";
-import { assetById, type ContentItem, type ReviewAction } from "@/lib/mock-data";
+import type { ContentItem, ReviewAction } from "@/lib/mock-data";
 import { assetTypeIcon } from "@/lib/asset-icon";
 import { statusVariant } from "@/lib/status";
 
@@ -64,9 +64,7 @@ export function ContentDetailSheet({
 
   if (!item) return null;
 
-  const linkedAssets = item.assetIds
-    .map((id) => assetById(id))
-    .filter((asset): asset is NonNullable<typeof asset> => Boolean(asset));
+  const linkedAssets = item.linkedAssets;
 
   return (
     <Sheet
@@ -129,7 +127,7 @@ export function ContentDetailSheet({
                       <Icon className="size-4 shrink-0 text-muted-foreground" />
                       <span className="min-w-0 flex-1 truncate">{asset.name}</span>
                       <span className="shrink-0 text-xs text-muted-foreground">
-                        {asset.size}
+                        {asset.type}
                       </span>
                     </div>
                   );
