@@ -54,6 +54,15 @@ const ACTIVITY_LABEL: Record<AuditAction, string> = {
   [AuditAction.SocialAccountReconnected]: "reconnected an account",
   [AuditAction.SocialAccountRenamed]: "renamed an account",
   [AuditAction.SocialAccountStatusChanged]: "flagged an account for reauthorization",
+  [AuditAction.ConversationMarkedRead]: "marked a conversation read",
+  [AuditAction.ConversationMarkedUnread]: "marked a conversation unread",
+  [AuditAction.ConversationArchived]: "archived a conversation",
+  [AuditAction.ConversationUnarchived]: "unarchived a conversation",
+  [AuditAction.ConversationAssigned]: "assigned a conversation",
+  [AuditAction.ConversationNoteAdded]: "added a note to a conversation",
+  [AuditAction.ConversationResolved]: "resolved a conversation",
+  [AuditAction.ConversationReopened]: "reopened a conversation",
+  [AuditAction.ConversationReplied]: "replied to a conversation",
 };
 
 export type DashboardActivityEntry = {

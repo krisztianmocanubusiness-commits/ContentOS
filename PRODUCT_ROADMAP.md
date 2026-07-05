@@ -398,7 +398,66 @@ behind real workspace-scoped access control.
         a Manager (who can do almost everything else) correctly blocked
         from every mutation, true tenant isolation, and the loading
         skeleton / error boundary both firing correctly
-- [ ] Remaining pages still on mock data: Inbox, Monetization
+- [x] Inbox migrated to Server Components + Prisma, with a provider-agnostic
+      architecture and cursor-based pagination
+      (`src/lib/inbox-data.ts` for reads, `src/lib/inbox-actions.ts` for writes):
+      - Every inbox item — a DM thread, a comment thread, a mention, or a
+        notification, from any platform — is one `Conversation` row.
+        `InboxItemType` (Comment / Direct Message / Mention / Notification)
+        is the single discriminator the rest of the app branches on; a
+        nullable `externalId` (a future webhook-dedup idempotency key) and
+        a free-form `metadata Json?` bucket exist so a real platform
+        integration can populate rows in this same shape later without a
+        schema migration — nothing reads `metadata` yet, matching this
+        codebase's existing "future feature, unused today" fields (e.g.
+        `Asset.metadata` from the Assets migration)
+      - Internal team notes are a separate `ConversationNote` model, not a
+        third `InboxMessage.from` value — notes are never sent to the
+        contact and shouldn't be able to leak into the customer-facing
+        thread by construction
+      - Introduced this codebase's first cursor-based pagination:
+        `getWorkspaceConversations` takes an optional `cursor` + `limit`,
+        over-fetches by one row (`take: limit + 1`) against a stable
+        `orderBy: [{updatedAt: "desc"}, {id: "desc"}]` to detect `hasMore`
+        without a separate count query, and every filter (search, type,
+        platform, status, archived, assigned-to, unread-only) is applied
+        in the same `WHERE` clause rather than fetched-then-filtered in
+        memory. Total/unread counts for the header badge come from a
+        separate `getWorkspaceConversationCounts` so they stay correct
+        across pages instead of only reflecting whatever happens to be on
+        the current page
+      - Added an 8th permission, `manageInbox` (Owner/Admin/Manager, same
+        tier as `approveContent`), gating every mutation — mark read/
+        unread, archive/unarchive, assign, add an internal note, resolve/
+        reopen, and reply. Viewing and searching the inbox stays open to
+        every workspace member, matching the read-open/mutate-gated
+        pattern already used for Content and Assets
+      - Nine new `AuditAction` values, one per mutation, each with its own
+        `Conversation`-scoped audit log row (`AuditLog.conversationId`,
+        `onDelete: SetNull`, mirroring every other auditable-entity column)
+      - The client board (`src/components/inbox/inbox-board.tsx`) keeps the
+        original two-pane layout, copy, and classNames unchanged, and adds
+        search/type/platform/unread/archived filter controls, an assignee
+        picker, resolve/reopen and archive/unarchive buttons, and an
+        internal-notes side panel, all disabled for callers without
+        `manageInbox`. No `useEffect` drives any data fetch — every fetch
+        (selecting a conversation, changing a filter, loading more, a
+        mutation's optimistic refresh) is triggered directly from the
+        event handler that caused it, matching the rest of the app's
+        client boards and avoiding the newer eslint-plugin-react-hooks
+        rules against synchronous `setState` inside effects
+      - 30 Vitest integration tests (data layer and actions) covering
+        every filter, cursor pagination's stable ordering and no-skip/no-
+        repeat guarantee, tenant isolation, the `manageInbox` permission
+        boundary, persistence, and audit logging for every mutation
+      - Verified desktop and mobile: search and every filter narrowing the
+        list correctly, sending a reply and seeing it persist and bump the
+        conversation to the top, adding an internal note, resolving/
+        reopening, archiving/unarchiving (and the archived conversation
+        correctly dropping out of the default view), assigning to a
+        teammate, an Editor seeing the inbox but every mutation control
+        disabled, and the empty-workspace and loading states
+- [ ] Remaining pages still on mock data: Monetization
 
 ## Phase 2 — Earn Trust at Scale (not started)
 
@@ -417,4 +476,4 @@ customers, public API, billing/plan enforcement tied to real usage.
 
 ---
 
-_Last updated: after migrating the Social Accounts page to Server Components + Prisma._
+_Last updated: after migrating the Inbox page to Server Components + Prisma._

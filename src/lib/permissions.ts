@@ -7,7 +7,8 @@ export type Permission =
   | "publishContent"
   | "approveContent"
   | "manageSocialAccounts"
-  | "manageMonetization";
+  | "manageMonetization"
+  | "manageInbox";
 
 export const PERMISSION_LABELS: Record<Permission, string> = {
   manageTeam: "Manage team",
@@ -17,6 +18,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   approveContent: "Approve content",
   manageSocialAccounts: "Connect social accounts",
   manageMonetization: "Manage monetization deals",
+  manageInbox: "Manage the inbox",
 };
 
 // Ordered from most to least privileged. Each role's permission set is a
@@ -54,6 +56,7 @@ const PERMISSIONS: Record<TeamRole, Record<Permission, boolean>> = {
     approveContent: true,
     manageSocialAccounts: true,
     manageMonetization: true,
+    manageInbox: true,
   },
   Admin: {
     manageTeam: true,
@@ -63,6 +66,7 @@ const PERMISSIONS: Record<TeamRole, Record<Permission, boolean>> = {
     approveContent: true,
     manageSocialAccounts: true,
     manageMonetization: false,
+    manageInbox: true,
   },
   Manager: {
     manageTeam: true,
@@ -72,6 +76,7 @@ const PERMISSIONS: Record<TeamRole, Record<Permission, boolean>> = {
     approveContent: true,
     manageSocialAccounts: false,
     manageMonetization: false,
+    manageInbox: true,
   },
   Editor: {
     manageTeam: false,
@@ -81,6 +86,7 @@ const PERMISSIONS: Record<TeamRole, Record<Permission, boolean>> = {
     approveContent: false,
     manageSocialAccounts: false,
     manageMonetization: false,
+    manageInbox: false,
   },
   Moderator: {
     manageTeam: false,
@@ -90,6 +96,7 @@ const PERMISSIONS: Record<TeamRole, Record<Permission, boolean>> = {
     approveContent: false,
     manageSocialAccounts: false,
     manageMonetization: false,
+    manageInbox: false,
   },
   Analyst: {
     manageTeam: false,
@@ -99,6 +106,7 @@ const PERMISSIONS: Record<TeamRole, Record<Permission, boolean>> = {
     approveContent: false,
     manageSocialAccounts: false,
     manageMonetization: false,
+    manageInbox: false,
   },
   Viewer: {
     manageTeam: false,
@@ -108,6 +116,7 @@ const PERMISSIONS: Record<TeamRole, Record<Permission, boolean>> = {
     approveContent: false,
     manageSocialAccounts: false,
     manageMonetization: false,
+    manageInbox: false,
   },
 };
 

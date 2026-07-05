@@ -244,13 +244,15 @@ async function main() {
     await prisma.socialAccount.upsert({ where: { id: account.id }, update: account, create: account });
   }
 
+  // A spread of types/statuses/archived/assignment states for demo/QA —
+  // not every conversation is a plain unassigned open DM.
   const conversations = [
-    { id: "conv1", workspaceId: "keris", platform: "Instagram" as const, contactName: "Sophie Marlowe", contactHandle: "@sophie.creates", contactInitials: "SM", unread: true },
-    { id: "conv2", workspaceId: "keris", platform: "Instagram" as const, contactName: "Glowlux Skincare", contactHandle: "@glowlux", contactInitials: "GL", unread: true },
-    { id: "conv3", workspaceId: "keris", platform: "TikTok" as const, contactName: "Jordan Wells", contactHandle: "@jordanw", contactInitials: "JW", unread: false },
-    { id: "conv4", workspaceId: "buildible", platform: "LinkedIn" as const, contactName: "Jordan Lee", contactHandle: "Jordan Lee", contactInitials: "JL", unread: true },
-    { id: "conv5", workspaceId: "buildible", platform: "X" as const, contactName: "Dev Fan", contactHandle: "@devfan22", contactInitials: "DF", unread: false },
-    { id: "conv6", workspaceId: "buildible", platform: "LinkedIn" as const, contactName: "Nova Retail Team", contactHandle: "Nova Retail", contactInitials: "NR", unread: false },
+    { id: "conv1", workspaceId: "keris", platform: "Instagram" as const, type: "DirectMessage" as const, contactName: "Sophie Marlowe", contactHandle: "@sophie.creates", contactInitials: "SM", unread: true, status: "Open" as const, archived: false, assignedToMembershipId: "t2" },
+    { id: "conv2", workspaceId: "keris", platform: "Instagram" as const, type: "DirectMessage" as const, contactName: "Glowlux Skincare", contactHandle: "@glowlux", contactInitials: "GL", unread: true, status: "Open" as const, archived: false, assignedToMembershipId: null },
+    { id: "conv3", workspaceId: "keris", platform: "TikTok" as const, type: "Comment" as const, contactName: "Jordan Wells", contactHandle: "@jordanw", contactInitials: "JW", unread: false, status: "Resolved" as const, archived: false, assignedToMembershipId: null },
+    { id: "conv4", workspaceId: "buildible", platform: "LinkedIn" as const, type: "DirectMessage" as const, contactName: "Jordan Lee", contactHandle: "Jordan Lee", contactInitials: "JL", unread: true, status: "Open" as const, archived: false, assignedToMembershipId: "t5" },
+    { id: "conv5", workspaceId: "buildible", platform: "X" as const, type: "Mention" as const, contactName: "Dev Fan", contactHandle: "@devfan22", contactInitials: "DF", unread: false, status: "Open" as const, archived: false, assignedToMembershipId: null },
+    { id: "conv6", workspaceId: "buildible", platform: "LinkedIn" as const, type: "Notification" as const, contactName: "Nova Retail Team", contactHandle: "Nova Retail", contactInitials: "NR", unread: false, status: "Open" as const, archived: true, assignedToMembershipId: null },
   ];
   for (const conversation of conversations) {
     await prisma.conversation.upsert({ where: { id: conversation.id }, update: conversation, create: conversation });
@@ -269,6 +271,14 @@ async function main() {
   ];
   for (const message of messages) {
     await prisma.inboxMessage.upsert({ where: { id: message.id }, update: message, create: message });
+  }
+
+  const conversationNotes = [
+    { id: "cn1", conversationId: "conv2", authorId: "u-ava", authorName: "Ava Reyes", body: "Flagging for brand outreach review before we commit to anything.", createdAt: hoursAgo(4) },
+    { id: "cn2", conversationId: "conv4", authorId: "u-sam", authorName: "Sam Kim", body: "Looping in sales — this looks like a real enterprise lead.", createdAt: hoursAgo(1) },
+  ];
+  for (const note of conversationNotes) {
+    await prisma.conversationNote.upsert({ where: { id: note.id }, update: note, create: note });
   }
 
   const deals = [

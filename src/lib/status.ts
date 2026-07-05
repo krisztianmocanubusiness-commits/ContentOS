@@ -1,4 +1,5 @@
 import type { ContentStatus, DealStatus } from "@/lib/mock-data";
+import type { ConversationStatus } from "@/lib/inbox-types";
 import type { SocialStatus } from "@/lib/social-account-types";
 
 export function statusVariant(
@@ -37,6 +38,12 @@ export function socialStatusVariant(
     default:
       return "outline";
   }
+}
+
+export function conversationStatusVariant(
+  status: ConversationStatus
+): "default" | "secondary" | "outline" | "success" | "warning" {
+  return status === "Resolved" ? "success" : "outline";
 }
 
 export function dealStatusVariant(

@@ -81,6 +81,25 @@ enum MessageSender {
   you
 }
 
+/**
+ * The provider-agnostic discriminator for an inbox item — every platform
+ * eventually maps its native concept (an Instagram DM, a TikTok comment,
+ * an X mention, a LinkedIn notification) onto exactly one of these four,
+ * so the rest of the app (list, thread view, filters) never branches on
+ * platform.
+ */
+enum InboxItemType {
+  Comment
+  DirectMessage @map("Direct Message")
+  Mention
+  Notification
+}
+
+enum ConversationStatus {
+  Open
+  Resolved
+}
+
 enum DealStatus {
   Negotiating
   InProgress @map("In Progress")
@@ -124,9 +143,10 @@ model WorkspaceMembership {
   status      MemberStatus @default(Active)
   createdAt   DateTime     @default(now())
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  auditLogs AuditLog[]
+  user                 User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace            Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  auditLogs            AuditLog[]
+  assignedConversations Conversation[]
 
   @@unique([userId, workspaceId])
   @@index([workspaceId])
@@ -257,19 +277,42 @@ model SocialAccount {
   @@index([workspaceId])
 }
 
+/**
+ * A unified inbox item — a DM thread, a comment thread, a mention, or a
+ * notification — from any platform. `externalId` + `metadata` exist so a
+ * real provider integration can plug in later purely by populating rows
+ * in this same shape (an idempotency key to dedup webhook redelivery,
+ * and a free-form bucket for whatever a given platform's payload looks
+ * like) rather than requiring a schema change; nothing reads `metadata`
+ * yet.
+ */
 model Conversation {
-  id              String   @id
-  workspaceId     String
-  platform        Platform
-  contactName     String
-  contactHandle   String
-  contactInitials String
-  unread          Boolean  @default(false)
+  id                     String              @id
+  workspaceId            String
+  platform               Platform
+  type                   InboxItemType       @default(DirectMessage)
+  contactName            String
+  contactHandle          String
+  contactInitials        String
+  externalId             String?
+  status                 ConversationStatus  @default(Open)
+  unread                 Boolean             @default(false)
+  archived               Boolean             @default(false)
+  assignedToMembershipId String?
+  metadata               Json?
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
 
-  workspace Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  messages  InboxMessage[]
+  workspace    Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  assignedTo   WorkspaceMembership?  @relation(fields: [assignedToMembershipId], references: [id], onDelete: SetNull)
+  messages     InboxMessage[]
+  notes        ConversationNote[]
+  auditLogs    AuditLog[]
 
   @@index([workspaceId])
+  @@index([workspaceId, archived])
+  @@index([workspaceId, status])
+  @@index([assignedToMembershipId])
 }
 
 model InboxMessage {
@@ -278,6 +321,26 @@ model InboxMessage {
   from           MessageSender
   body           String        @db.Text
   createdAt      DateTime      @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+}
+
+/**
+ * Internal, team-only annotation on a conversation — never sent to the
+ * contact, distinct from InboxMessage (the actual back-and-forth with
+ * them). Same shape as ContentComment: free-text author fields, since
+ * the audit trail (actorId, a real FK) is what's authoritative for who
+ * did what, not this display-only author name.
+ */
+model ConversationNote {
+  id             String   @id
+  conversationId String
+  authorId       String
+  authorName     String
+  body           String   @db.Text
+  createdAt      DateTime @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
@@ -321,6 +384,15 @@ enum AuditAction {
   SocialAccountReconnected
   SocialAccountRenamed
   SocialAccountStatusChanged
+  ConversationMarkedRead
+  ConversationMarkedUnread
+  ConversationArchived
+  ConversationUnarchived
+  ConversationAssigned
+  ConversationNoteAdded
+  ConversationResolved
+  ConversationReopened
+  ConversationReplied
 }
 
 /**
@@ -337,6 +409,7 @@ model AuditLog {
   workspaceMembershipId String?
   assetId               String?
   socialAccountId       String?
+  conversationId        String?
   actorId               String
   actorName             String
   action                AuditAction
@@ -349,6 +422,7 @@ model AuditLog {
   workspaceMembership WorkspaceMembership? @relation(fields: [workspaceMembershipId], references: [id], onDelete: SetNull)
   asset               Asset?               @relation(fields: [assetId], references: [id], onDelete: SetNull)
   socialAccount       SocialAccount?       @relation(fields: [socialAccountId], references: [id], onDelete: SetNull)
+  conversation        Conversation?        @relation(fields: [conversationId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId])
   @@index([contentItemId])
@@ -356,4 +430,5 @@ model AuditLog {
   @@index([workspaceMembershipId])
   @@index([assetId])
   @@index([socialAccountId])
+  @@index([conversationId])
 }

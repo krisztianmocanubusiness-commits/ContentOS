@@ -123,3 +123,40 @@ redirect → callback route → token exchange → store real
 scopes/expiry/avatar/follower count), plus a background job to refresh
 follower counts and detect real token expiry/revocation instead of the
 manual "Simulate issue" affordance.
+
+## Inbox conversations/messages are seeded, not synced from any real provider
+
+**Introduced:** Inbox migration.
+
+Like Social Accounts, there is no real integration syncing DMs, comments,
+mentions, or notifications from any platform into `Conversation`/
+`InboxMessage`. The schema (`InboxItemType`, `externalId`, `metadata Json?`
+on `Conversation`) is deliberately shaped so a real provider's webhook or
+polling job could insert rows in this same shape later, but today the only
+way rows exist is `prisma/seed.ts` and the in-app reply/note actions —
+there's no inbound webhook receiver, no polling job, and `externalId`/
+`metadata` are populated for exactly zero rows.
+
+**Closing it:** per platform, a webhook receiver (or polling job for
+platforms without webhooks) that upserts `Conversation`/`InboxMessage`
+rows keyed by `externalId` for idempotency, populating `metadata` with
+whatever the provider's payload looks like — additive to the current
+schema, not a rewrite.
+
+## No real-time updates for a shared team inbox
+
+**Introduced:** Inbox migration.
+
+The inbox is a genuinely multiplayer surface — unread state, assignment,
+and resolution are shared across the whole team — but the UI only
+reflects another teammate's action after a manual reload or the next
+filter/pagination fetch. Two people can have the same conversation open
+and neither sees the other's reply, read, or assignment change appear
+live.
+
+**Closing it:** a WebSocket or polling subscription scoped to the
+workspace's conversations, invalidating/refetching the affected
+conversation (and, if it's currently open in the thread pane, the detail
+view) when another actor's mutation lands — the same
+`revalidatePath`-triggered Server Actions already in place would just
+need a broadcast step added alongside them.
