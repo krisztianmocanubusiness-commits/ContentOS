@@ -167,8 +167,53 @@ behind real workspace-scoped access control.
         from every mutation client- and server-side, tenant isolation via
         direct URL, and the loading skeleton / error boundary / empty
         state (a workspace with zero events) all rendering correctly
-- [ ] Remaining pages still on mock data: Analytics, Assets, Social
-      Accounts, Inbox, Monetization, Team
+- [x] Analytics migrated to Server Components + Prisma
+      (`src/lib/analytics-data.ts`, a reusable service layer other pages
+      — Dashboard, future AI/reports — can call directly, not an
+      Analytics-only module):
+      - Replaced every fake social-performance number (Total Reach,
+        Engagement Rate, New Followers, a "Top posts" table ranked by
+        made-up reach/engagement) with real, schema-backed operational
+        metrics: content status summary, posting frequency, content by
+        platform/status/tag, calendar activity, review pipeline,
+        approval turnaround, review activity, team contribution, and
+        workspace growth — all scoped to `workspaceId` and computed with
+        SQL-side `groupBy`/`count` aggregation, not fetch-then-filter
+      - The range selector (`7d`/`30d`/`90d`) is a URL search param, not
+        client state, so the page stays a pure async Server Component —
+        a tiny `"use client"` `<Select>` does `router.push` to
+        `?range=...` and the Server Component re-renders with fresh data
+        for that window. Its options live in a new neutral module,
+        `src/lib/analytics-range.ts` (no `"server-only"`, no Prisma),
+        since a client component can't import anything that transitively
+        pulls in a `"server-only"`-guarded module even for a plain type
+      - Team contribution is keyed off `AuditLog.actorId` (a real FK),
+        not the free-text `authorName`/`byName` fields elsewhere in the
+        schema, which would silently undercount contributors whenever a
+        display name doesn't exactly match the authenticated user's name
+      - Approval turnaround pairs each `submitted` event with its next
+        terminal decision per content item and averages the elapsed time,
+        reporting `null`/zero-sample honestly instead of a fake average
+        when a workspace has no completed review cycles yet
+      - Every widget has an explicit "Not enough data yet" / "No content
+        yet in this period" empty state — verified on the Personal
+        workspace (zero content, zero activity) rendering all-zero tiles
+        and every empty-state message with no fake numbers anywhere
+      - Two reach-specific chart components were generalized into
+        reusable, unit-agnostic ones (`BarChart`, `CategoryBreakdown`)
+        accepting a `formatValue` prop, since the old hardcoded "reach in
+        thousands" formatting was actively wrong for plain counts
+      - All 11 sub-metrics for a given range run in parallel via a single
+        `Promise.all`, wrapped in React's `cache()` for per-request dedup
+      - 13 Vitest integration tests against real Postgres cover every
+        exported function's correctness plus tenant isolation for each
+      - Verified desktop and mobile layouts, range switching end-to-end
+        in the browser, true tenant isolation (a Keris-only user hitting
+        `/w/buildible/analytics` gets a 404, not just an authorized
+        Owner's legitimate access to both workspaces), and the loading
+        skeleton / error boundary both firing correctly
+- [ ] Remaining pages still on mock data: Assets, Social Accounts, Inbox,
+      Monetization, Team
 
 ## Phase 2 — Earn Trust at Scale (not started)
 

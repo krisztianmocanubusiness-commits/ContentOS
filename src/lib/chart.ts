@@ -21,3 +21,10 @@ export function formatReachK(valueInThousands: number): string {
   }
   return `${valueInThousands % 1 === 0 ? valueInThousands : valueInThousands.toFixed(1)}K`;
 }
+
+/** Formats a plain count, e.g. 7 -> "7", 1840 -> "1.8K". For real counts, not pre-scaled reach figures. */
+export function formatCount(value: number): string {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+  return String(value);
+}

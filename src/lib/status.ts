@@ -16,6 +16,14 @@ export function statusVariant(
   }
 }
 
+/** Raw bar-fill colors matching statusVariant's semantics, for charts that can't use the Badge component. */
+export const statusBarColor: Record<ContentStatus, string> = {
+  Draft: "bg-muted-foreground/50",
+  "Needs Review": "bg-warning",
+  Scheduled: "bg-primary",
+  Published: "bg-success",
+};
+
 export function dealStatusVariant(
   status: DealStatus
 ): "default" | "secondary" | "outline" | "success" | "warning" {

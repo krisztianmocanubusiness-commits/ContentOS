@@ -3,10 +3,28 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
-import { niceMax, formatReachK } from "@/lib/chart";
-import type { ChartPoint } from "@/lib/mock-data";
+import { niceMax, formatCount } from "@/lib/chart";
 
-export function ReachChart({ data }: { data: ChartPoint[] }) {
+export type BarChartPoint = {
+  label: string;
+  value: number;
+};
+
+/**
+ * Generic hoverable bar chart — originally built for a "reach" metric,
+ * generalized so any workspace analytics service (posting frequency,
+ * calendar activity, future metrics) can reuse it with its own unit
+ * label and value formatting instead of assuming reach-in-thousands.
+ */
+export function BarChart({
+  data,
+  unitLabel = "",
+  formatValue = formatCount,
+}: {
+  data: BarChartPoint[];
+  unitLabel?: string;
+  formatValue?: (value: number) => string;
+}) {
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
 
   const max = niceMax(Math.max(...data.map((d) => d.value), 1));
@@ -23,7 +41,7 @@ export function ReachChart({ data }: { data: ChartPoint[] }) {
           }}
         >
           <div className="font-semibold text-foreground">
-            {formatReachK(active.value)} reach
+            {formatValue(active.value)} {unitLabel}
           </div>
           <div className="text-muted-foreground">{active.label}</div>
         </div>
@@ -32,7 +50,7 @@ export function ReachChart({ data }: { data: ChartPoint[] }) {
       <div className="flex h-48 gap-3">
         <div className="flex w-10 shrink-0 flex-col justify-between py-0.5 text-right text-[11px] text-muted-foreground">
           {ticks.map((tick) => (
-            <span key={tick}>{formatReachK(tick)}</span>
+            <span key={tick}>{formatValue(tick)}</span>
           ))}
         </div>
 
@@ -57,11 +75,11 @@ export function ReachChart({ data }: { data: ChartPoint[] }) {
                 onFocus={() => setActiveIndex(i)}
                 onBlur={() => setActiveIndex(null)}
                 onClick={() => setActiveIndex((prev) => (prev === i ? null : i))}
-                aria-label={`${point.label}: ${formatReachK(point.value)} reach`}
+                aria-label={`${point.label}: ${formatValue(point.value)} ${unitLabel}`}
               >
                 {isLast && (
                   <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[11px] font-medium text-foreground">
-                    {formatReachK(point.value)}
+                    {formatValue(point.value)}
                   </span>
                 )}
                 <div
