@@ -58,7 +58,34 @@ behind real workspace-scoped access control.
       - CI now runs a real Postgres service container and applies
         migrations before the test step, so these integration tests
         actually execute on every push, not just locally
-- [ ] End-to-end verification pass: desktop + mobile, all roles, edge cases
+- [x] End-to-end verification pass: desktop + mobile, all roles, edge cases
+      - Expanded the role model from 4 to 7 roles: `Owner`, `Admin`,
+        `Manager`, `Editor`, `Moderator`, `Analyst`, `Viewer`, ordered
+        most- to least-privileged. Each role's permission set is a subset
+        of the role before it (enforced by a monotonicity test) — Manager
+        is Admin without team/social-account management, Moderator can
+        create content but not publish or approve it, and Analyst is a
+        read-only role kept distinct from Viewer for reporting/labeling
+        even though the two currently carry identical permissions.
+      - Added seeded users for every role in the Keris workspace (Ava/
+        Admin, Nadia/Manager, Mila/Editor, Oscar/Moderator, Tara/Analyst,
+        Victor/Viewer, alongside the existing Owner) so every role can
+        actually be logged into and tested, not just asserted in a unit test.
+      - Verified, per role, with real logins (not just the client-side
+        "preview as" demo aid): correct UI gating on Content (new content,
+        submit/approve/request-changes), Team (invite, role editing),
+        Monetization (new deal), Social Accounts (connect/disconnect), and
+        Settings (workspace fields) on both desktop and mobile; server-side
+        enforcement of the same rules via 22 Server Action integration
+        tests (up from 20, adding Manager/Moderator/Analyst cases);
+        workspace-switcher scoping (a Keris-only user's switcher shows only
+        Keris); and tenant isolation (direct URL to a workspace the user
+        isn't a member of 404s regardless of role)
+      - No permission, isolation, or UX bugs found — the existing
+        `PERMISSIONS` matrix / `hasPermission` / `PermissionButton` /
+        `requireWorkspaceAccess` architecture extended to three new roles
+        without any structural changes, which is itself a signal the
+        original design was sound
 - [ ] Remaining pages still on mock data: Dashboard (recent content/upcoming
       widgets), Calendar, Analytics, Assets, Social Accounts, Inbox,
       Monetization, Team
@@ -80,4 +107,4 @@ customers, public API, billing/plan enforcement tied to real usage.
 
 ---
 
-_Last updated: after migrating Content review/comment actions to Server Actions._
+_Last updated: after the 7-role permission expansion and end-to-end role/tenant-isolation verification pass._

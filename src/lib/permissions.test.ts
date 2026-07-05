@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import { hasPermission, PERMISSION_LABELS, ROLES, type Permission } from "./permissions";
+import type { TeamRole } from "./mock-data";
 
 const PERMISSIONS = Object.keys(PERMISSION_LABELS) as Permission[];
-const RANK: Record<(typeof ROLES)[number], number> = { Viewer: 0, Editor: 1, Admin: 2, Owner: 3 };
+
+// ROLES is ordered most- to least-privileged; rank it so "higher" means
+// "more privileged" for the monotonicity check below.
+const RANK = Object.fromEntries(
+  ROLES.map((role, index) => [role, ROLES.length - index])
+) as Record<TeamRole, number>;
 
 describe("hasPermission", () => {
   it("grants Owner every permission", () => {
@@ -15,6 +21,12 @@ describe("hasPermission", () => {
   it("grants Viewer no permissions", () => {
     for (const permission of PERMISSIONS) {
       expect(hasPermission("Viewer", permission)).toBe(false);
+    }
+  });
+
+  it("grants Analyst no permissions", () => {
+    for (const permission of PERMISSIONS) {
+      expect(hasPermission("Analyst", permission)).toBe(false);
     }
   });
 
@@ -37,10 +49,38 @@ describe("hasPermission", () => {
     expect(hasPermission("Editor", "manageTeam")).toBe(false);
   });
 
+  it("lets Manager run team and approvals, but not connect channels", () => {
+    expect(hasPermission("Manager", "manageTeam")).toBe(true);
+    expect(hasPermission("Manager", "createContent")).toBe(true);
+    expect(hasPermission("Manager", "publishContent")).toBe(true);
+    expect(hasPermission("Manager", "approveContent")).toBe(true);
+    expect(hasPermission("Manager", "manageSocialAccounts")).toBe(false);
+    expect(hasPermission("Manager", "manageWorkspace")).toBe(false);
+  });
+
+  it("lets Moderator create content but not publish or approve it", () => {
+    expect(hasPermission("Moderator", "createContent")).toBe(true);
+    expect(hasPermission("Moderator", "publishContent")).toBe(false);
+    expect(hasPermission("Moderator", "approveContent")).toBe(false);
+    expect(hasPermission("Moderator", "manageTeam")).toBe(false);
+  });
+
   it("reserves workspace and monetization management for Owner only", () => {
-    for (const role of ["Admin", "Editor", "Viewer"] as const) {
+    for (const role of ["Admin", "Manager", "Editor", "Moderator", "Analyst", "Viewer"] as const) {
       expect(hasPermission(role, "manageWorkspace")).toBe(false);
       expect(hasPermission(role, "manageMonetization")).toBe(false);
     }
+  });
+
+  it("covers all seven roles with no unexpected gaps", () => {
+    expect(ROLES).toEqual([
+      "Owner",
+      "Admin",
+      "Manager",
+      "Editor",
+      "Moderator",
+      "Analyst",
+      "Viewer",
+    ]);
   });
 });

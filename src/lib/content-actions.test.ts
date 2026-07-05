@@ -23,7 +23,10 @@ const OTHER_WORKSPACE_ID = `ws-other-${randomUUID()}`;
 const OTHER_SLUG = `test-other-${randomUUID()}`;
 
 const OWNER = { id: `user-owner-${randomUUID()}`, name: "Owner Test", initials: "OT" };
+const MANAGER = { id: `user-manager-${randomUUID()}`, name: "Manager Test", initials: "MT" };
 const EDITOR = { id: `user-editor-${randomUUID()}`, name: "Editor Test", initials: "ET" };
+const MODERATOR = { id: `user-moderator-${randomUUID()}`, name: "Moderator Test", initials: "OT2" };
+const ANALYST = { id: `user-analyst-${randomUUID()}`, name: "Analyst Test", initials: "AT" };
 const VIEWER = { id: `user-viewer-${randomUUID()}`, name: "Viewer Test", initials: "VT" };
 const OUTSIDER = { id: `user-outsider-${randomUUID()}`, name: "Outsider Test", initials: "OU" };
 
@@ -59,7 +62,7 @@ beforeAll(async () => {
     ],
   });
 
-  for (const user of [OWNER, EDITOR, VIEWER, OUTSIDER]) {
+  for (const user of [OWNER, MANAGER, EDITOR, MODERATOR, ANALYST, VIEWER, OUTSIDER]) {
     await prisma.user.create({
       data: {
         id: user.id,
@@ -74,7 +77,10 @@ beforeAll(async () => {
   await prisma.workspaceMembership.createMany({
     data: [
       { id: randomUUID(), userId: OWNER.id, workspaceId: WORKSPACE_ID, role: "Owner", status: "Active" },
+      { id: randomUUID(), userId: MANAGER.id, workspaceId: WORKSPACE_ID, role: "Manager", status: "Active" },
       { id: randomUUID(), userId: EDITOR.id, workspaceId: WORKSPACE_ID, role: "Editor", status: "Active" },
+      { id: randomUUID(), userId: MODERATOR.id, workspaceId: WORKSPACE_ID, role: "Moderator", status: "Active" },
+      { id: randomUUID(), userId: ANALYST.id, workspaceId: WORKSPACE_ID, role: "Analyst", status: "Active" },
       { id: randomUUID(), userId: VIEWER.id, workspaceId: WORKSPACE_ID, role: "Viewer", status: "Active" },
       { id: randomUUID(), userId: OUTSIDER.id, workspaceId: OTHER_WORKSPACE_ID, role: "Owner", status: "Active" },
     ],
@@ -84,7 +90,9 @@ beforeAll(async () => {
 afterAll(async () => {
   await prisma.workspace.deleteMany({ where: { id: { in: [WORKSPACE_ID, OTHER_WORKSPACE_ID] } } });
   await prisma.user.deleteMany({
-    where: { id: { in: [OWNER.id, EDITOR.id, VIEWER.id, OUTSIDER.id] } },
+    where: {
+      id: { in: [OWNER.id, MANAGER.id, EDITOR.id, MODERATOR.id, ANALYST.id, VIEWER.id, OUTSIDER.id] },
+    },
   });
   await prisma.$disconnect();
 });
@@ -187,6 +195,33 @@ describe("submitForReviewAction", () => {
     expect(updated.status).toBe("Draft");
   });
 
+  it("forbids an Analyst from submitting", async () => {
+    actAs(ANALYST);
+    const item = await createContentItem(DbContentStatus.Draft);
+
+    const result = await submitForReviewAction(SLUG, item.id);
+
+    expect(result).toMatchObject({ ok: false, code: "forbidden" });
+  });
+
+  it("lets a Moderator submit (createContent only, no publish/approve)", async () => {
+    actAs(MODERATOR);
+    const item = await createContentItem(DbContentStatus.Draft);
+
+    const result = await submitForReviewAction(SLUG, item.id);
+
+    expect(result).toMatchObject({ ok: true, data: { status: "Needs Review" } });
+  });
+
+  it("lets a Manager submit", async () => {
+    actAs(MANAGER);
+    const item = await createContentItem(DbContentStatus.Draft);
+
+    const result = await submitForReviewAction(SLUG, item.id);
+
+    expect(result).toMatchObject({ ok: true, data: { status: "Needs Review" } });
+  });
+
   it("reports a conflict when the item is no longer a Draft", async () => {
     actAs(EDITOR);
     const item = await createContentItem(DbContentStatus.NeedsReview);
@@ -234,6 +269,24 @@ describe("approveContentAction", () => {
     expect(result).toMatchObject({ ok: false, code: "forbidden" });
   });
 
+  it("forbids a Moderator from approving", async () => {
+    actAs(MODERATOR);
+    const item = await createContentItem(DbContentStatus.NeedsReview);
+
+    const result = await approveContentAction(SLUG, item.id);
+
+    expect(result).toMatchObject({ ok: false, code: "forbidden" });
+  });
+
+  it("lets a Manager approve", async () => {
+    actAs(MANAGER);
+    const item = await createContentItem(DbContentStatus.NeedsReview);
+
+    const result = await approveContentAction(SLUG, item.id);
+
+    expect(result).toMatchObject({ ok: true, data: { status: "Scheduled" } });
+  });
+
   it("reports a conflict when the item is no longer in review", async () => {
     actAs(OWNER);
     const item = await createContentItem(DbContentStatus.Draft);
@@ -278,5 +331,23 @@ describe("requestChangesAction", () => {
     const result = await requestChangesAction(SLUG, item.id, "Fix the title");
 
     expect(result).toMatchObject({ ok: false, code: "forbidden" });
+  });
+
+  it("forbids a Moderator from requesting changes", async () => {
+    actAs(MODERATOR);
+    const item = await createContentItem(DbContentStatus.NeedsReview);
+
+    const result = await requestChangesAction(SLUG, item.id, "Fix the title");
+
+    expect(result).toMatchObject({ ok: false, code: "forbidden" });
+  });
+
+  it("lets a Manager request changes", async () => {
+    actAs(MANAGER);
+    const item = await createContentItem(DbContentStatus.NeedsReview);
+
+    const result = await requestChangesAction(SLUG, item.id, "Fix the title");
+
+    expect(result).toMatchObject({ ok: true, data: { status: "Draft" } });
   });
 });

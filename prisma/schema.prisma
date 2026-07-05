@@ -25,7 +25,10 @@ enum Plan {
 enum TeamRole {
   Owner
   Admin
+  Manager
   Editor
+  Moderator
+  Analyst
   Viewer
 }
 

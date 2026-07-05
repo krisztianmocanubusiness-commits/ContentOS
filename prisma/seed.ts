@@ -47,7 +47,11 @@ async function main() {
   const users = [
     { id: "u-krisztian", name: "Krisztián Mocanu", email: "demo@contentos.dev", initials: "KM", passwordHash: await passwordHash("ContentOS-Demo-2026") },
     { id: "u-ava", name: "Ava Reyes", email: "ava@keris.co", initials: "AR", passwordHash: placeholderPassword },
+    { id: "u-nadia", name: "Nadia Torres", email: "nadia@keris.co", initials: "NT", passwordHash: placeholderPassword },
     { id: "u-mila", name: "Mila Chen", email: "mila@keris.co", initials: "MC", passwordHash: placeholderPassword },
+    { id: "u-oscar", name: "Oscar Bennett", email: "oscar@keris.co", initials: "OB", passwordHash: placeholderPassword },
+    { id: "u-tara", name: "Tara Singh", email: "tara@keris.co", initials: "TS", passwordHash: placeholderPassword },
+    { id: "u-victor", name: "Victor Alvarez", email: "victor@keris.co", initials: "VA", passwordHash: placeholderPassword },
     { id: "u-sam", name: "Sam Kim", email: "sam@buildible.com", initials: "SK", passwordHash: placeholderPassword },
     { id: "u-leo", name: "Leo Dupont", email: "leo@buildible.com", initials: "LD", passwordHash: placeholderPassword },
     { id: "u-priya", name: "Priya Nair", email: "priya@buildible.com", initials: "PN", passwordHash: placeholderPassword },
@@ -68,7 +72,11 @@ async function main() {
   const memberships = [
     { id: "t1", userId: "u-krisztian", workspaceId: "keris", role: "Owner" as const, status: "Active" as const },
     { id: "t2", userId: "u-ava", workspaceId: "keris", role: "Admin" as const, status: "Active" as const },
+    { id: "t2b", userId: "u-nadia", workspaceId: "keris", role: "Manager" as const, status: "Active" as const },
     { id: "t3", userId: "u-mila", workspaceId: "keris", role: "Editor" as const, status: "Active" as const },
+    { id: "t3b", userId: "u-oscar", workspaceId: "keris", role: "Moderator" as const, status: "Active" as const },
+    { id: "t3c", userId: "u-tara", workspaceId: "keris", role: "Analyst" as const, status: "Active" as const },
+    { id: "t3d", userId: "u-victor", workspaceId: "keris", role: "Viewer" as const, status: "Active" as const },
     { id: "t4", userId: "u-krisztian", workspaceId: "buildible", role: "Owner" as const, status: "Active" as const },
     { id: "t5", userId: "u-sam", workspaceId: "buildible", role: "Editor" as const, status: "Active" as const },
     { id: "t6", userId: "u-leo", workspaceId: "buildible", role: "Editor" as const, status: "Invited" as const },

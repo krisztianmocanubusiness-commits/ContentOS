@@ -485,7 +485,14 @@ export function socialAccountsForWorkspace(workspaceId: string) {
   return socialAccounts.filter((account) => account.workspaceId === workspaceId);
 }
 
-export type TeamRole = "Owner" | "Admin" | "Editor" | "Viewer";
+export type TeamRole =
+  | "Owner"
+  | "Admin"
+  | "Manager"
+  | "Editor"
+  | "Moderator"
+  | "Analyst"
+  | "Viewer";
 
 export type TeamMember = {
   id: string;
@@ -500,7 +507,11 @@ export type TeamMember = {
 export const teamMembers: TeamMember[] = [
   { id: "t1", workspaceId: "keris", name: "Krisztián Mocanu", email: "demo@contentos.dev", role: "Owner", status: "Active", initials: "KM" },
   { id: "t2", workspaceId: "keris", name: "Ava Reyes", email: "ava@keris.co", role: "Admin", status: "Active", initials: "AR" },
+  { id: "t2b", workspaceId: "keris", name: "Nadia Torres", email: "nadia@keris.co", role: "Manager", status: "Active", initials: "NT" },
   { id: "t3", workspaceId: "keris", name: "Mila Chen", email: "mila@keris.co", role: "Editor", status: "Active", initials: "MC" },
+  { id: "t3b", workspaceId: "keris", name: "Oscar Bennett", email: "oscar@keris.co", role: "Moderator", status: "Active", initials: "OB" },
+  { id: "t3c", workspaceId: "keris", name: "Tara Singh", email: "tara@keris.co", role: "Analyst", status: "Active", initials: "TS" },
+  { id: "t3d", workspaceId: "keris", name: "Victor Alvarez", email: "victor@keris.co", role: "Viewer", status: "Active", initials: "VA" },
 
   { id: "t4", workspaceId: "buildible", name: "Krisztián Mocanu", email: "demo@contentos.dev", role: "Owner", status: "Active", initials: "KM" },
   { id: "t5", workspaceId: "buildible", name: "Sam Kim", email: "sam@buildible.com", role: "Editor", status: "Active", initials: "SK" },
