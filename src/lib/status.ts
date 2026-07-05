@@ -1,4 +1,5 @@
 import type { ContentStatus, DealStatus } from "@/lib/mock-data";
+import type { SocialStatus } from "@/lib/social-account-types";
 
 export function statusVariant(
   status: ContentStatus
@@ -23,6 +24,20 @@ export const statusBarColor: Record<ContentStatus, string> = {
   Scheduled: "bg-primary",
   Published: "bg-success",
 };
+
+export function socialStatusVariant(
+  status: SocialStatus
+): "default" | "secondary" | "outline" | "success" | "warning" {
+  switch (status) {
+    case "Connected":
+      return "success";
+    case "NeedsReauth":
+      return "warning";
+    case "NotConnected":
+    default:
+      return "outline";
+  }
+}
 
 export function dealStatusVariant(
   status: DealStatus

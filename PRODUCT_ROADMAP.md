@@ -343,8 +343,62 @@ behind real workspace-scoped access control.
         controls, true tenant isolation (a Keris-only user hitting
         `/w/buildible/assets` gets a 404), and the loading skeleton /
         error boundary both firing correctly.
-- [ ] Remaining pages still on mock data: Social Accounts, Inbox,
-      Monetization
+- [x] Social Accounts migrated to Server Components + Prisma, with
+      simulated OAuth
+      (`src/lib/social-account-data.ts` for reads, `src/lib/social-account-actions.ts`
+      for writes):
+      - Extended `Platform` from 5 to 8 values (added Facebook, Threads,
+        Pinterest). The new hues in `src/lib/platform.ts` were run
+        through the dataviz skill's `validate_palette.js` (per that
+        file's own "run the validator before changing these values"
+        comment) rather than eyeballed — the 8-color set passes
+        lightness/chroma/contrast checks, with the pre-existing 5 colors
+        left untouched
+      - `SocialAccount` gained real columns: `displayName`, `avatarUrl`,
+        `scopes` (simulated OAuth permission strings), `tokenExpiresAt`,
+        and a `createdAt` for deterministic ordering (missing before —
+        every other model already had one). `SocialStatus` gained a
+        third state, `NeedsReauth`, distinct from `NotConnected`: it
+        means the token is known-bad (simulated external revocation or
+        an actually-lapsed `tokenExpiresAt`), and the fix is Reconnect,
+        not Connect — Connect always creates a brand-new account row,
+        Reconnect re-activates an existing one
+      - "Connection health" (Healthy / Expiring soon / Needs attention /
+        Disconnected) is computed from `status` + `tokenExpiresAt` at
+        read time, not stored — avoids a second piece of state that
+        could drift out of sync with the token expiry it describes
+      - Five Server Actions — `connectAccountAction`,
+        `disconnectAccountAction`, `reconnectAccountAction`,
+        `renameAccountAction`, and `simulateConnectionIssueAction`
+        (a demo/QA affordance that flips Connected → NeedsReauth,
+        simulating the platform revoking access outside of any user
+        action) — each gated on the existing `manageSocialAccounts`
+        permission (Owner/Admin only; notably not Manager, unlike most
+        other workspace-management permissions) and each paired with
+        its own `AuditAction` (`SocialAccountConnected/Disconnected/
+        Reconnected/Renamed/StatusChanged`)
+      - OAuth itself is simulated end-to-end — connect/reconnect
+        populate a plausible fake scope list and a 60-day token expiry
+        rather than performing a real provider handshake, tracked as
+        tech debt (see `TECH_DEBT.md`) since the schema shape already
+        matches what a real integration would store
+      - Fixed the same class of bug found during the Assets migration:
+        the account detail dialog's "recent posts" list now queries
+        `ContentItem` by workspace + platform + status directly instead
+        of filtering an in-memory mock array, ordered newest-scheduled-first
+        (the old mock had no explicit order)
+      - 30 Vitest integration tests (data layer — including 6 pure
+        unit tests of the health-computation function's branches — and
+        actions) covering filtering, tenant isolation, the Manager-can't-
+        manage-social-accounts permission boundary specifically, all
+        five state-transition actions, and audit log correctness
+      - Verified desktop and mobile: connecting a new account, renaming,
+        simulating a connection issue and seeing it reflected as "Needs
+        Reauth" / "Needs attention" health, reconnecting, disconnecting,
+        a Manager (who can do almost everything else) correctly blocked
+        from every mutation, true tenant isolation, and the loading
+        skeleton / error boundary both firing correctly
+- [ ] Remaining pages still on mock data: Inbox, Monetization
 
 ## Phase 2 — Earn Trust at Scale (not started)
 
@@ -363,4 +417,4 @@ customers, public API, billing/plan enforcement tied to real usage.
 
 ---
 
-_Last updated: after migrating the Assets page to Server Components + Prisma._
+_Last updated: after migrating the Social Accounts page to Server Components + Prisma._

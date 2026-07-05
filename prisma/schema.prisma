@@ -1,11 +1,9 @@
 // Prisma schema for Content OS.
 //
-// This is the milestone 10 "foundation" — it models every entity from
-// src/lib/mock-data.ts and is seeded with equivalent data (see
-// prisma/seed.ts), but only auth (User, Workspace, WorkspaceMembership)
-// is wired into the running app so far. Every other page still reads
-// from mock-data.ts; migrating each one to query this schema is future
-// work, one page at a time.
+// Models every entity from the original src/lib/mock-data.ts prototype,
+// migrated one page at a time onto real Prisma/Postgres queries (see
+// PRODUCT_ROADMAP.md for the migration log). As of the Social Accounts
+// migration, only Inbox and Monetization still read from mock-data.ts.
 
 generator client {
   provider = "prisma-client"
@@ -43,6 +41,9 @@ enum Platform {
   X
   LinkedIn
   YouTube
+  Facebook
+  Threads
+  Pinterest
 }
 
 enum ContentStatus {
@@ -68,6 +69,11 @@ enum AssetType {
 enum SocialStatus {
   Connected
   NotConnected @map("Not Connected")
+  /// Was Connected but the token is no longer valid (simulated external
+  /// revocation, or a token past its tokenExpiresAt) — distinct from a
+  /// user-initiated NotConnected, since the fix here is Reconnect, not
+  /// Connect (which creates a brand-new account row).
+  NeedsReauth @map("Needs Reauth")
 }
 
 enum MessageSender {
@@ -224,17 +230,29 @@ model Asset {
   @@index([workspaceId, status])
 }
 
+/**
+ * OAuth is simulated end-to-end (see TECH_DEBT.md) — scopes/tokenExpiresAt
+ * are populated with plausible fake values on connect/reconnect rather
+ * than a real provider handshake, but the shape matches what a real
+ * integration would store, so swapping in real OAuth later is additive.
+ */
 model SocialAccount {
   id             String       @id
   workspaceId    String
   platform       Platform
   handle         String
+  displayName    String
+  avatarUrl      String?
   followersLabel String
   status         SocialStatus
+  scopes         String[]
+  tokenExpiresAt DateTime?
   connectedSince DateTime?
   lastSyncedAt   DateTime?
+  createdAt      DateTime     @default(now())
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  auditLogs AuditLog[]
 
   @@index([workspaceId])
 }
@@ -298,6 +316,11 @@ enum AuditAction {
   AssetMoved
   AssetDeleted
   AssetRestored
+  SocialAccountConnected
+  SocialAccountDisconnected
+  SocialAccountReconnected
+  SocialAccountRenamed
+  SocialAccountStatusChanged
 }
 
 /**
@@ -313,6 +336,7 @@ model AuditLog {
   calendarEventId       String?
   workspaceMembershipId String?
   assetId               String?
+  socialAccountId       String?
   actorId               String
   actorName             String
   action                AuditAction
@@ -324,10 +348,12 @@ model AuditLog {
   calendarEvent       CalendarEvent?       @relation(fields: [calendarEventId], references: [id], onDelete: SetNull)
   workspaceMembership WorkspaceMembership? @relation(fields: [workspaceMembershipId], references: [id], onDelete: SetNull)
   asset               Asset?               @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  socialAccount       SocialAccount?       @relation(fields: [socialAccountId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId])
   @@index([contentItemId])
   @@index([calendarEventId])
   @@index([workspaceMembershipId])
   @@index([assetId])
+  @@index([socialAccountId])
 }

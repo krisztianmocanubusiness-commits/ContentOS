@@ -12,7 +12,15 @@ export type Workspace = {
 // the equivalent seed data) via WorkspaceProvider — this file only keeps
 // the Workspace type, which everything below still keys off of.
 
-export type Platform = "Instagram" | "TikTok" | "X" | "LinkedIn" | "YouTube";
+export type Platform =
+  | "Instagram"
+  | "TikTok"
+  | "X"
+  | "LinkedIn"
+  | "YouTube"
+  | "Facebook"
+  | "Threads"
+  | "Pinterest";
 
 export type ContentStatus = "Draft" | "Scheduled" | "Published" | "Needs Review";
 
@@ -172,30 +180,6 @@ export type CalendarEvent = {
   platform: Platform;
 };
 
-export type SocialAccount = {
-  id: string;
-  workspaceId: string;
-  platform: Platform;
-  handle: string;
-  followers: string;
-  status: "Connected" | "Not Connected";
-  connectedSince: string;
-  lastSynced: string;
-};
-
-export const socialAccounts: SocialAccount[] = [
-  { id: "s1", workspaceId: "keris", platform: "Instagram", handle: "@keris", followers: "212K", status: "Connected", connectedSince: "Jan 2024", lastSynced: "2h ago" },
-  { id: "s2", workspaceId: "keris", platform: "TikTok", handle: "@keris", followers: "340K", status: "Connected", connectedSince: "Mar 2024", lastSynced: "1h ago" },
-  { id: "s3", workspaceId: "keris", platform: "YouTube", handle: "Keris", followers: "58K", status: "Connected", connectedSince: "Aug 2023", lastSynced: "5h ago" },
-  { id: "s4", workspaceId: "keris", platform: "X", handle: "@keris", followers: "12K", status: "Not Connected", connectedSince: "—", lastSynced: "—" },
-
-  { id: "s5", workspaceId: "buildible", platform: "LinkedIn", handle: "Buildible", followers: "8.4K", status: "Connected", connectedSince: "Feb 2025", lastSynced: "3h ago" },
-  { id: "s6", workspaceId: "buildible", platform: "X", handle: "@buildible", followers: "5.1K", status: "Connected", connectedSince: "Feb 2025", lastSynced: "6h ago" },
-  { id: "s7", workspaceId: "buildible", platform: "YouTube", handle: "Buildible", followers: "2.3K", status: "Not Connected", connectedSince: "—", lastSynced: "—" },
-
-  // Personal — intentionally empty
-];
-
 export function contentForWorkspace(workspaceId: string) {
   return contentItems.filter((item) => item.workspaceId === workspaceId);
 }
@@ -210,10 +194,6 @@ export function tagsForWorkspace(workspaceId: string): string[] {
     for (const tag of item.tags) tags.add(tag);
   }
   return Array.from(tags).sort();
-}
-
-export function socialAccountsForWorkspace(workspaceId: string) {
-  return socialAccounts.filter((account) => account.workspaceId === workspaceId);
 }
 
 export type TeamRole =

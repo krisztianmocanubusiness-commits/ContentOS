@@ -49,6 +49,11 @@ const ACTIVITY_LABEL: Record<AuditAction, string> = {
   [AuditAction.AssetMoved]: "moved",
   [AuditAction.AssetDeleted]: "deleted",
   [AuditAction.AssetRestored]: "restored",
+  [AuditAction.SocialAccountConnected]: "connected an account",
+  [AuditAction.SocialAccountDisconnected]: "disconnected an account",
+  [AuditAction.SocialAccountReconnected]: "reconnected an account",
+  [AuditAction.SocialAccountRenamed]: "renamed an account",
+  [AuditAction.SocialAccountStatusChanged]: "flagged an account for reauthorization",
 };
 
 export type DashboardActivityEntry = {

@@ -96,3 +96,30 @@ ever restore.
 calls the storage adapter's `delete`) past some retention window (e.g.
 30 days in `Deleted` status), plus a "delete forever" action in the
 Trash UI for anyone who wants it sooner.
+
+## Social account OAuth is fully simulated
+
+**Introduced:** Social Accounts migration.
+
+There is no real OAuth integration with any platform. `connectAccountAction`
+and `reconnectAccountAction` (`src/lib/social-account-actions.ts`)
+populate `SocialAccount.scopes` and `tokenExpiresAt` with plausible fake
+values (a fixed scope list, a 60-day expiry) instead of performing a
+real provider handshake — no redirect to TikTok/Instagram/YouTube/X/
+Facebook/Threads/LinkedIn/Pinterest ever happens, and `followersLabel`
+is never actually synced from a real API (it's `"0"` on connect and
+never updates itself). `simulateConnectionIssueAction` exists
+specifically because there's no real webhook or health check that could
+ever organically flip an account to `NeedsReauth`.
+
+This is a deliberate, explicit scope boundary for this migration (per
+its own requirements: "keep OAuth mocked/simulated unless real platform
+APIs already exist") — the schema (`displayName`/`avatarUrl`/`scopes`/
+`tokenExpiresAt`/`status`) already matches what a real integration would
+store, so wiring in a real provider later is additive, not a rewrite.
+
+**Closing it:** for each platform, a real OAuth 2.0 flow (authorize
+redirect → callback route → token exchange → store real
+scopes/expiry/avatar/follower count), plus a background job to refresh
+follower counts and detect real token expiry/revocation instead of the
+manual "Simulate issue" affordance.

@@ -65,6 +65,12 @@ function monthYear(label: string): Date {
 const now = new Date();
 const hoursAgo = (n: number) => new Date(now.getTime() - n * 60 * 60 * 1000);
 const daysAgo = (n: number) => new Date(now.getTime() - n * 24 * 60 * 60 * 1000);
+const daysFromNow = (n: number) => new Date(now.getTime() + n * 24 * 60 * 60 * 1000);
+
+// Mirrors src/lib/social-account-actions.ts's SIMULATED_SCOPES — seeding
+// can't import that module (it's a "use server" file, which can only
+// export async actions) so it duplicates the same fake scope set.
+const SIMULATED_SCOPES = ["read_profile", "read_posts", "publish_posts", "read_insights"];
 
 async function passwordHash(password: string) {
   return bcrypt.hash(password, 10);
@@ -222,14 +228,17 @@ async function main() {
     });
   }
 
+  // A spread of health states for demo/QA: Healthy (far-out expiry),
+  // ExpiringSoon (s2, within the 7-day window), NeedsReauth (s6, token
+  // already lapsed), and NotConnected (s4, s7) — not just Connected/Not.
   const socialAccounts = [
-    { id: "s1", workspaceId: "keris", platform: "Instagram" as const, handle: "@keris", followersLabel: "212K", status: "Connected" as const, connectedSince: monthYear("Jan 2024"), lastSyncedAt: hoursAgo(2) },
-    { id: "s2", workspaceId: "keris", platform: "TikTok" as const, handle: "@keris", followersLabel: "340K", status: "Connected" as const, connectedSince: monthYear("Mar 2024"), lastSyncedAt: hoursAgo(1) },
-    { id: "s3", workspaceId: "keris", platform: "YouTube" as const, handle: "Keris", followersLabel: "58K", status: "Connected" as const, connectedSince: monthYear("Aug 2023"), lastSyncedAt: hoursAgo(5) },
-    { id: "s4", workspaceId: "keris", platform: "X" as const, handle: "@keris", followersLabel: "12K", status: "NotConnected" as const, connectedSince: null, lastSyncedAt: null },
-    { id: "s5", workspaceId: "buildible", platform: "LinkedIn" as const, handle: "Buildible", followersLabel: "8.4K", status: "Connected" as const, connectedSince: monthYear("Feb 2025"), lastSyncedAt: hoursAgo(3) },
-    { id: "s6", workspaceId: "buildible", platform: "X" as const, handle: "@buildible", followersLabel: "5.1K", status: "Connected" as const, connectedSince: monthYear("Feb 2025"), lastSyncedAt: hoursAgo(6) },
-    { id: "s7", workspaceId: "buildible", platform: "YouTube" as const, handle: "Buildible", followersLabel: "2.3K", status: "NotConnected" as const, connectedSince: null, lastSyncedAt: null },
+    { id: "s1", workspaceId: "keris", platform: "Instagram" as const, handle: "@keris", displayName: "Keris", avatarUrl: null, followersLabel: "212K", status: "Connected" as const, scopes: SIMULATED_SCOPES, tokenExpiresAt: daysFromNow(45), connectedSince: monthYear("Jan 2024"), lastSyncedAt: hoursAgo(2) },
+    { id: "s2", workspaceId: "keris", platform: "TikTok" as const, handle: "@keris", displayName: "Keris", avatarUrl: null, followersLabel: "340K", status: "Connected" as const, scopes: SIMULATED_SCOPES, tokenExpiresAt: daysFromNow(5), connectedSince: monthYear("Mar 2024"), lastSyncedAt: hoursAgo(1) },
+    { id: "s3", workspaceId: "keris", platform: "YouTube" as const, handle: "Keris", displayName: "Keris", avatarUrl: null, followersLabel: "58K", status: "Connected" as const, scopes: SIMULATED_SCOPES, tokenExpiresAt: daysFromNow(60), connectedSince: monthYear("Aug 2023"), lastSyncedAt: hoursAgo(5) },
+    { id: "s4", workspaceId: "keris", platform: "X" as const, handle: "@keris", displayName: "Keris", avatarUrl: null, followersLabel: "12K", status: "NotConnected" as const, scopes: [], tokenExpiresAt: null, connectedSince: null, lastSyncedAt: null },
+    { id: "s5", workspaceId: "buildible", platform: "LinkedIn" as const, handle: "Buildible", displayName: "Buildible", avatarUrl: null, followersLabel: "8.4K", status: "Connected" as const, scopes: SIMULATED_SCOPES, tokenExpiresAt: daysFromNow(30), connectedSince: monthYear("Feb 2025"), lastSyncedAt: hoursAgo(3) },
+    { id: "s6", workspaceId: "buildible", platform: "X" as const, handle: "@buildible", displayName: "Buildible", avatarUrl: null, followersLabel: "5.1K", status: "NeedsReauth" as const, scopes: SIMULATED_SCOPES, tokenExpiresAt: daysAgo(2), connectedSince: monthYear("Feb 2025"), lastSyncedAt: hoursAgo(6) },
+    { id: "s7", workspaceId: "buildible", platform: "YouTube" as const, handle: "Buildible", displayName: "Buildible", avatarUrl: null, followersLabel: "2.3K", status: "NotConnected" as const, scopes: [], tokenExpiresAt: null, connectedSince: null, lastSyncedAt: null },
   ];
   for (const account of socialAccounts) {
     await prisma.socialAccount.upsert({ where: { id: account.id }, update: account, create: account });

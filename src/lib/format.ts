@@ -3,6 +3,11 @@ export function formatShortDate(date: Date): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+/** "Jan 2024" style month+year, matching the label style the old mock social account "connected since" data used. */
+export function formatMonthYear(date: Date): string {
+  return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;

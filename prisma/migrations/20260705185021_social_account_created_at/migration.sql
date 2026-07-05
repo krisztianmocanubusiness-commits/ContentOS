@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "SocialAccount" ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;

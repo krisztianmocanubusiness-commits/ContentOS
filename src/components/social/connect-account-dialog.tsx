@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Loader2 } from "lucide-react";
 
 import {
   Dialog,
@@ -22,38 +23,50 @@ import {
 } from "@/components/ui/select";
 import type { Platform } from "@/lib/mock-data";
 
-const PLATFORMS: Platform[] = ["Instagram", "TikTok", "X", "LinkedIn", "YouTube"];
+const PLATFORMS: Platform[] = [
+  "TikTok",
+  "Instagram",
+  "YouTube",
+  "X",
+  "Facebook",
+  "Threads",
+  "LinkedIn",
+  "Pinterest",
+];
 
 export function ConnectAccountDialog({
   open,
   onOpenChange,
+  isPending,
   onConnect,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConnect: (input: { platform: Platform; handle: string }) => void;
+  isPending: boolean;
+  onConnect: (input: { platform: Platform; handle: string; displayName: string }) => void;
 }) {
   const [platform, setPlatform] = React.useState<Platform>("Instagram");
   const [handle, setHandle] = React.useState("");
+  const [displayName, setDisplayName] = React.useState("");
 
   function reset() {
     setPlatform("Instagram");
     setHandle("");
+    setDisplayName("");
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = handle.trim();
     if (!trimmed) return;
-    onConnect({ platform, handle: trimmed });
-    reset();
-    onOpenChange(false);
+    onConnect({ platform, handle: trimmed, displayName: displayName.trim() || trimmed });
   }
 
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
+        if (isPending) return;
         onOpenChange(next);
         if (!next) reset();
       }}
@@ -62,15 +75,15 @@ export function ConnectAccountDialog({
         <DialogHeader>
           <DialogTitle>Connect account</DialogTitle>
           <DialogDescription>
-            Connections are mocked for now — this adds a placeholder account,
-            not a real OAuth link.
+            OAuth is simulated for now — this creates a placeholder connection with
+            fake scopes and a token expiry, not a real link to {platform}.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="account-platform">Platform</Label>
             <Select value={platform} onValueChange={(value) => setPlatform(value as Platform)}>
-              <SelectTrigger id="account-platform">
+              <SelectTrigger id="account-platform" disabled={isPending}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -91,13 +104,27 @@ export function ConnectAccountDialog({
               onChange={(e) => setHandle(e.target.value)}
               autoFocus
               required
+              disabled={isPending}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="account-display-name">Display name</Label>
+            <Input
+              id="account-display-name"
+              placeholder="Defaults to the handle"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              disabled={isPending}
             />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
               Cancel
             </Button>
-            <Button type="submit">Connect</Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending && <Loader2 className="animate-spin" />}
+              Connect
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
