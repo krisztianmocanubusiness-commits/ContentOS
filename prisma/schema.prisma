@@ -181,7 +181,8 @@ model CalendarEvent {
   title       String
   platform    Platform
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  auditLogs AuditLog[]
 
   @@index([workspaceId])
 }
@@ -263,6 +264,10 @@ enum AuditAction {
   ContentApproved
   ContentChangesRequested
   ContentCommented
+  CalendarEventCreated
+  CalendarEventUpdated
+  CalendarEventRescheduled
+  CalendarEventDeleted
 }
 
 /**
@@ -272,18 +277,21 @@ enum AuditAction {
  * status changes, and comments all have a durable trail from day one.
  */
 model AuditLog {
-  id            String      @id
-  workspaceId   String
-  contentItemId String?
-  actorId       String
-  actorName     String
-  action        AuditAction
-  metadata      Json?
-  createdAt     DateTime    @default(now())
+  id             String         @id
+  workspaceId    String
+  contentItemId  String?
+  calendarEventId String?
+  actorId        String
+  actorName      String
+  action         AuditAction
+  metadata       Json?
+  createdAt      DateTime       @default(now())
 
-  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  contentItem ContentItem? @relation(fields: [contentItemId], references: [id], onDelete: SetNull)
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contentItem   ContentItem?   @relation(fields: [contentItemId], references: [id], onDelete: SetNull)
+  calendarEvent CalendarEvent? @relation(fields: [calendarEventId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId])
   @@index([contentItemId])
+  @@index([calendarEventId])
 }

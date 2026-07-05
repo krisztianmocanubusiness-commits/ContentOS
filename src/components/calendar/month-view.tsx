@@ -4,7 +4,7 @@ import { EventChip } from "@/components/calendar/event-chip";
 import { DroppableSlot } from "@/components/calendar/droppable-slot";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { platformColor } from "@/lib/platform";
-import { WEEKDAYS, TODAY, buildMonthGrid, isSameDay, toISODate } from "@/lib/calendar";
+import { WEEKDAYS, getToday, buildMonthGrid, isSameDay, toISODate } from "@/lib/calendar";
 import type { CalendarEvent } from "@/lib/mock-data";
 
 export function MonthView({
@@ -21,6 +21,7 @@ export function MonthView({
   onSelectDay?: (date: Date) => void;
 }) {
   const isMobile = useIsMobile();
+  const today = getToday();
   const cells = buildMonthGrid(cursor.getFullYear(), cursor.getMonth());
 
   return (
@@ -52,7 +53,7 @@ export function MonthView({
             <span
               className={
                 "flex size-5 items-center justify-center rounded-full text-[11px] font-medium " +
-                (isSameDay(day, TODAY)
+                (isSameDay(day, today)
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground")
               }

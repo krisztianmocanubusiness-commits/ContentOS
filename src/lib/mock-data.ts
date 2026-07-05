@@ -170,23 +170,6 @@ export type CalendarEvent = {
   platform: Platform;
 };
 
-export const calendarEvents: CalendarEvent[] = [
-  { id: "e1", workspaceId: "keris", date: "2026-07-01", time: "7:30 AM", title: "Coffee run vlog", platform: "Instagram" },
-  { id: "e2", workspaceId: "keris", date: "2026-07-03", time: "9:00 AM", title: "Morning routine reel", platform: "TikTok" },
-  { id: "e3", workspaceId: "keris", date: "2026-07-04", time: "1:00 PM", title: "Outfit try-on carousel", platform: "Instagram" },
-  { id: "e4", workspaceId: "keris", date: "2026-07-06", time: "10:30 AM", title: "Live Q&A recap", platform: "Instagram" },
-  { id: "e5", workspaceId: "keris", date: "2026-07-10", time: "8:00 AM", title: "Monthly favorites", platform: "YouTube" },
-  { id: "e6", workspaceId: "keris", date: "2026-07-18", time: "11:00 AM", title: "Summer lookbook", platform: "Instagram" },
-  { id: "e7", workspaceId: "keris", date: "2026-07-24", time: "2:00 PM", title: "Studio tour vlog", platform: "YouTube" },
-
-  { id: "e8", workspaceId: "buildible", date: "2026-07-01", time: "9:00 AM", title: "Weekly standup recap", platform: "X" },
-  { id: "e9", workspaceId: "buildible", date: "2026-07-03", time: "9:00 AM", title: "v2.4 changelog", platform: "LinkedIn" },
-  { id: "e10", workspaceId: "buildible", date: "2026-07-07", time: "1:00 PM", title: "Nova Retail case study", platform: "LinkedIn" },
-  { id: "e11", workspaceId: "buildible", date: "2026-07-09", time: "10:00 AM", title: "Automations demo", platform: "YouTube" },
-  { id: "e12", workspaceId: "buildible", date: "2026-07-14", time: "8:30 AM", title: "Integration launch", platform: "LinkedIn" },
-  { id: "e13", workspaceId: "buildible", date: "2026-07-22", time: "3:00 PM", title: "Roadmap AMA", platform: "X" },
-];
-
 export type AnalyticsRange = "7d" | "30d" | "90d";
 
 export const ANALYTICS_RANGES: { value: AnalyticsRange; label: string }[] = [
@@ -456,10 +439,6 @@ export function tagsForWorkspace(workspaceId: string): string[] {
     for (const tag of item.tags) tags.add(tag);
   }
   return Array.from(tags).sort();
-}
-
-export function calendarEventsForWorkspace(workspaceId: string) {
-  return calendarEvents.filter((event) => event.workspaceId === workspaceId);
 }
 
 export function assetsForWorkspace(workspaceId: string) {

@@ -1,7 +1,13 @@
 export const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-// The app treats this as "today" so the mock schedule always feels current.
-export const TODAY = new Date(2026, 6, 1);
+/**
+ * The real current date. A function (not a frozen module-level constant)
+ * so it doesn't go stale in a long-running server process — the calendar
+ * now reads real CalendarEvent rows, so "today" needs to actually be today.
+ */
+export function getToday(): Date {
+  return new Date();
+}
 
 export const DAY_START_HOUR = 6;
 export const DAY_END_HOUR = 21;
@@ -78,6 +84,22 @@ export function inputValueToTimeLabel(value: string): string {
   const period = hour24 >= 12 ? "PM" : "AM";
   const hour = hour24 % 12 === 0 ? 12 : hour24 % 12;
   return `${hour}:${minute} ${period}`;
+}
+
+/** A Date's clock time as "7:30 AM" — unlike formatHourLabel, keeps minutes. */
+export function formatTimeLabel(date: Date): string {
+  return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
+/** Combines an ISO date (yyyy-mm-dd) with a "7:30 AM" time label into a Date. */
+export function combineDateAndTime(dateISO: string, timeLabel: string): Date {
+  const date = fromISODate(dateISO);
+  const match = timeLabel.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!match) return date;
+  let hour = Number(match[1]) % 12;
+  if (match[3].toUpperCase() === "PM") hour += 12;
+  date.setHours(hour, Number(match[2]), 0, 0);
+  return date;
 }
 
 export function formatMonthLabel(date: Date): string {

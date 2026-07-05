@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 
 import { AuditAction, ContentStatus as DbContentStatus } from "@/generated/prisma/enums";
 import type { Prisma, ReviewEvent as PrismaReviewEvent } from "@/generated/prisma/client";
+import type { ActionResult } from "@/lib/action-result";
 import { formatRelativeTime } from "@/lib/format";
 import type { ContentComment, ContentStatus, ReviewEvent } from "@/lib/mock-data";
 import { hasPermission } from "@/lib/permissions";
@@ -14,10 +15,6 @@ import { requireWorkspaceAccess } from "@/lib/workspace-access";
 
 const MAX_COMMENT_LENGTH = 2000;
 const MAX_REASON_LENGTH = 500;
-
-export type ActionResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: string; code: "forbidden" | "not_found" | "invalid" | "conflict" };
 
 const CONFLICT_MESSAGE =
   "This content was updated by someone else in the meantime. Refresh to see the latest.";

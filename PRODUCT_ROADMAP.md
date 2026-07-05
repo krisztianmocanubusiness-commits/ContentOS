@@ -125,8 +125,50 @@ behind real workspace-scoped access control.
       - Verified empty states render correctly (no fake data) for a
         workspace with zero content, zero activity, and a single member,
         and that the loading skeleton and error boundary both fire
-- [ ] Remaining pages still on mock data: Calendar, Analytics, Assets,
-      Social Accounts, Inbox, Monetization, Team
+- [x] Calendar migrated to Server Components + Prisma
+      (`src/lib/calendar-data.ts` for reads, `src/lib/calendar-actions.ts`
+      for writes). This page had no working create/edit/delete UI at
+      all before — the "Schedule post" button was inert and the detail
+      sheet could only reschedule date/time — so this slice both moved
+      the data and built the missing functionality:
+      - `getWorkspaceCalendarEvents` fetches the whole workspace's events
+        (not a date range), matching the existing client-side month/week/
+        day navigation, which stays instant with no round trip per view
+        change — the same tradeoff the Content list already makes
+      - Four Server Actions (create/update/reschedule/delete), each
+        re-verifying `publishContent` permission and re-scoping the
+        target event by `workspaceId` before mutating, so a foreign or
+        guessed event id can't be touched
+      - Reschedule (drag-and-drop or the sheet's quick date/time change)
+        is a distinct, lighter action from a full edit (title/platform/
+        date/time via the sheet's form), so the audit trail and toast
+        copy both say the right thing for what actually happened
+      - `AuditLog` gained a `calendarEventId` column (sibling to the
+        existing `contentItemId`, same `onDelete: SetNull` pattern) and
+        four new `AuditAction` values — deleting an event keeps its audit
+        record with the title preserved in `metadata` even after the FK
+        is nulled out
+      - Drag-and-drop reschedule stays optimistic (instant move, rolled
+        back on failure) since that's the core interaction; create/edit/
+        delete show a pending state and wait for confirmation, matching
+        the Content actions' convention
+      - Fixed a real staleness bug found while doing this: `TODAY` was a
+        module-level `new Date(2026, 6, 1)` constant frozen at import
+        time — harmless for mock data pinned to that date, but wrong the
+        moment the calendar reads real dates. Replaced with `getToday()`,
+        called fresh wherever "is this today" actually gets checked.
+      - 15 Vitest integration tests against real Postgres cover
+        authorization, tenant isolation (an event from another workspace
+        can't be read, updated, rescheduled, or deleted), and the delete
+        action's audit trail surviving the row it points to
+      - Verified all three views (Month with dots, Week agenda, Day) at
+        desktop and mobile, drag-and-drop persisting across a reload, the
+        full create → edit → delete cycle, a Viewer correctly blocked
+        from every mutation client- and server-side, tenant isolation via
+        direct URL, and the loading skeleton / error boundary / empty
+        state (a workspace with zero events) all rendering correctly
+- [ ] Remaining pages still on mock data: Analytics, Assets, Social
+      Accounts, Inbox, Monetization, Team
 
 ## Phase 2 — Earn Trust at Scale (not started)
 
@@ -145,4 +187,4 @@ customers, public API, billing/plan enforcement tied to real usage.
 
 ---
 
-_Last updated: after migrating the Dashboard to Server Components + Prisma._
+_Last updated: after migrating the Calendar to Server Components + Prisma._

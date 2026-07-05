@@ -2,7 +2,7 @@
 
 import { EventChip, EventChipContent } from "@/components/calendar/event-chip";
 import { DroppableSlot } from "@/components/calendar/droppable-slot";
-import { WEEKDAYS, TODAY, addDays, isSameDay, startOfWeek, toISODate } from "@/lib/calendar";
+import { WEEKDAYS, getToday, addDays, isSameDay, startOfWeek, toISODate } from "@/lib/calendar";
 import type { CalendarEvent } from "@/lib/mock-data";
 
 export function WeekView({
@@ -18,6 +18,7 @@ export function WeekView({
 }) {
   const weekStart = startOfWeek(cursor);
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const today = getToday();
 
   return (
     <>
@@ -25,7 +26,7 @@ export function WeekView({
       <div className="flex flex-col divide-y divide-border rounded-lg border border-border md:hidden">
         {days.map((day, idx) => {
           const iso = toISODate(day);
-          const today = isSameDay(day, TODAY);
+          const isToday = isSameDay(day, today);
           const dayEvents = events
             .filter((event) => event.date === iso)
             .sort((a, b) => a.time.localeCompare(b.time));
@@ -36,7 +37,7 @@ export function WeekView({
                 <span
                   className={
                     "flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold " +
-                    (today ? "bg-primary text-primary-foreground" : "text-foreground")
+                    (isToday ? "bg-primary text-primary-foreground" : "text-foreground")
                   }
                 >
                   {day.getDate()}
@@ -70,7 +71,7 @@ export function WeekView({
       <div className="hidden grid-cols-7 gap-px overflow-hidden rounded-lg border border-border bg-border text-xs md:grid">
         {days.map((day, idx) => {
           const iso = toISODate(day);
-          const today = isSameDay(day, TODAY);
+          const isToday = isSameDay(day, today);
           const dayEvents = events
             .filter((event) => event.date === iso)
             .sort((a, b) => a.time.localeCompare(b.time));
@@ -88,7 +89,7 @@ export function WeekView({
                 <span
                   className={
                     "flex size-6 items-center justify-center rounded-full text-xs font-semibold " +
-                    (today ? "bg-primary text-primary-foreground" : "text-foreground")
+                    (isToday ? "bg-primary text-primary-foreground" : "text-foreground")
                   }
                 >
                   {day.getDate()}

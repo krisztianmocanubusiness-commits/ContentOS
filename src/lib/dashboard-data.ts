@@ -36,6 +36,10 @@ const ACTIVITY_LABEL: Record<AuditAction, string> = {
   [AuditAction.ContentApproved]: "approved",
   [AuditAction.ContentChangesRequested]: "requested changes on",
   [AuditAction.ContentCommented]: "commented on",
+  [AuditAction.CalendarEventCreated]: "scheduled",
+  [AuditAction.CalendarEventUpdated]: "updated",
+  [AuditAction.CalendarEventRescheduled]: "rescheduled",
+  [AuditAction.CalendarEventDeleted]: "deleted",
 };
 
 export type DashboardActivityEntry = {
@@ -101,12 +105,13 @@ function toActivityEntry(row: {
   action: AuditAction;
   createdAt: Date;
   contentItem: { title: string } | null;
+  calendarEvent: { title: string } | null;
 }): DashboardActivityEntry {
   return {
     id: row.id,
     actorName: row.actorName,
     verb: ACTIVITY_LABEL[row.action],
-    contentTitle: row.contentItem?.title ?? null,
+    contentTitle: row.contentItem?.title ?? row.calendarEvent?.title ?? null,
     timestamp: formatRelativeTime(row.createdAt),
   };
 }
@@ -178,6 +183,7 @@ export const getDashboardData = cache(
           action: true,
           createdAt: true,
           contentItem: { select: { title: true } },
+          calendarEvent: { select: { title: true } },
         },
       }),
       prisma.auditLog.findMany({
@@ -190,6 +196,7 @@ export const getDashboardData = cache(
           action: true,
           createdAt: true,
           contentItem: { select: { title: true } },
+          calendarEvent: { select: { title: true } },
         },
       }),
       prisma.workspaceMembership.findMany({
