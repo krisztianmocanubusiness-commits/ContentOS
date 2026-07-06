@@ -96,6 +96,27 @@ Reads are open to any workspace member; every mutation requires
 | `addConversationNoteAction(workspaceSlug, conversationId, body)` | `manageInbox` | Creates a `ConversationNote`; audit `ConversationNoteAdded` |
 | `replyToConversationAction(workspaceSlug, conversationId, body)` | `manageInbox` | Creates a `from: "you"` `InboxMessage`, bumps `Conversation.updatedAt`; audit `ConversationReplied` |
 
+## Monetization (`src/lib/monetization-actions.ts`)
+
+Reads are open to any workspace member; every mutation requires
+`manageMonetization` (Owner-only, unchanged from the pre-migration
+permission).
+
+| Action | Permission | Effect |
+| --- | --- | --- |
+| `getMonetizationEntriesAction(workspaceSlug, filters, cursor?)` | — (read) | Cursor-paginated `{ items, nextCursor, total }`; see `ARCHITECTURE.md` for the pagination pattern and `MonetizationFilters` in `src/lib/monetization-data.ts` for the filter shape (search, type, category, status, provider) |
+| `getMonetizationOverviewAction(workspaceSlug)` | — (read) | `{ summary, categoryBreakdown, timeline }` — the client re-fetches this after any mutation instead of `router.refresh()`, which would also reset the entries table's active filters |
+| `createMonetizationEntryAction(workspaceSlug, input)` | `manageMonetization` | Creates a `MonetizationEntry` (`type` derived from `category`, `paidAt` stamped if created directly as `Paid`); audit `MonetizationEntryCreated` |
+| `updateMonetizationEntryAction(workspaceSlug, entryId, input)` | `manageMonetization` | Updates any subset of fields (`input` is `Partial<MonetizationEntryInput>`), re-deriving `type` if `category` changes; audit `MonetizationEntryUpdated` |
+| `updateMonetizationEntryStatusAction(workspaceSlug, entryId, status)` | `manageMonetization` | Transitions `status`; stamps `paidAt` only on the *first* transition into `Paid`, leaving it untouched on later transitions; audit `MonetizationEntryStatusChanged` |
+| `deleteMonetizationEntryAction(workspaceSlug, entryId)` | `manageMonetization` | Hard-deletes the row; audit `MonetizationEntryDeleted` carries a `{ title, category, amount, currency }` snapshot in `metadata` since the FK would otherwise `SetNull` immediately |
+
+`src/lib/monetization-data.ts` additionally exports
+`getMonetizationSummary`, `getMonetizationByCategory`, and
+`getMonetizationTimeline` — not Server Actions themselves, but the
+Prisma-level aggregation functions `getMonetizationOverviewAction` and
+the Monetization Server Component page call directly.
+
 ## HTTP route handlers (`src/app/api/`)
 
 Used only where a Server Action doesn't fit: authentication needs a

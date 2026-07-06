@@ -1,9 +1,11 @@
 # Database
 
-Schema reference for `prisma/schema.prisma`. First version of this
-document, written alongside the Inbox migration — see
-`PRODUCT_ROADMAP.md` for which pages read from this schema versus
-`src/lib/mock-data.ts` (as of Inbox, only Monetization still does).
+Schema reference for `prisma/schema.prisma`. First written alongside the
+Inbox migration, updated for Monetization — see `PRODUCT_ROADMAP.md` for
+the migration log. Every page now reads from this schema; nothing reads
+from `src/lib/mock-data.ts` anymore (it only holds a handful of
+client-safe type unions — `Platform`, `TeamRole`, etc. — shared between
+server and client code).
 
 - **Engine:** Postgres, via `@prisma/adapter-pg`.
 - **Client:** generated to `src/generated/prisma/` (gitignored; run `npx
@@ -12,10 +14,11 @@ document, written alongside the Inbox migration — see
   required column to a table with existing dev rows will fail with
   "there are N rows in this table, it is not possible to execute this
   step" — this has come up in every migration that added a required
-  column (Assets, Social Accounts, Inbox); the fix in this dev
-  environment is to clear the affected table (`DELETE FROM
-  "TableName";` via `psql`) before re-running, since `prisma/seed.ts`
-  regenerates it afterward and none of it is real user data.
+  column or dropped a populated table (Assets, Social Accounts, Inbox,
+  Monetization's replacement of `Deal`); the fix in this dev environment
+  is to clear the affected table (`DELETE FROM "TableName";` via `psql`)
+  before re-running, since `prisma/seed.ts` regenerates it afterward and
+  none of it is real user data.
 - **Seed:** `npx tsx prisma/seed.ts` (idempotent — every row is an
   `upsert` keyed by a fixed seed id).
 
@@ -132,10 +135,45 @@ document, written alongside the Inbox migration — see
 
 ### Monetization
 
-- **`Deal`** — `brand`, `title`, `valueLabel`, `status` (`DealStatus`:
-  `Negotiating`/`In Progress`/`Signed`/`Paid`/`Completed`), `dueDate`.
-  Still backed by `src/lib/mock-data.ts`, not this table, as of the
-  Inbox migration — the model exists but nothing reads/writes it yet.
+- **`MonetizationEntry`** — the long-term financial hub: one row per
+  revenue or expense line item, replacing the earlier `Deal` model
+  (never wired up to a real page — see the Inbox-era version of this
+  document). Every category (sponsorship, affiliate, platform revenue,
+  merchandise, digital product, other income, expense) shares this one
+  table:
+  - `category` (`MonetizationCategory`) — the discriminator; see
+    `ARCHITECTURE.md`'s "provider-agnostic pattern." `type`
+    (`MonetizationType`: `Income`/`Expense`) is derived from `category`
+    at write time (`CATEGORY_TYPE` in `src/lib/monetization-types.ts`)
+    and stored redundantly so `groupBy`/`aggregate` queries can filter by
+    type directly instead of via a `CASE` expression Prisma doesn't
+    support.
+  - `provider` (`MonetizationProvider`, default `Manual`) and `platform`
+    (nullable, reuses the `Platform` enum) — where this entry's data
+    conceptually came from, and which channel it's attributed to.
+    `externalId`/`metadata Json?` are reserved, unused today, for a real
+    payment/payout integration (see `TECH_DEBT.md`).
+  - `status` (`MonetizationStatus`: `Negotiating`/`In Progress`/
+    `Pending`/`Paid`/`Cancelled`) — independent of the date fields below.
+    "Overdue" is derived at read time (`isOverdue()` in
+    `monetization-types.ts`: a still-outstanding status past its
+    `dueDate`), not a stored status value, mirroring how Social
+    Accounts' connection health is derived rather than stored.
+  - `amount` (`Decimal(12,2)`) + `currency` (a plain `String`, default
+    `"USD"`, validated against a small curated list in the action layer
+    rather than a DB enum — adding a supported currency is a code change,
+    never a migration).
+  - `date` (required — the entry's booking/attribution date, what
+    summaries and the revenue timeline group by), `dueDate` (nullable —
+    when payment is expected), `paidAt` (nullable — stamped
+    automatically the first time `status` transitions to `Paid`, and
+    left untouched on any later transition away from and back to `Paid`,
+    so it stays a true "first paid" timestamp).
+  - `@@index([workspaceId])`, `@@index([workspaceId, type])`,
+    `@@index([workspaceId, category])`, `@@index([workspaceId, status])`,
+    `@@index([workspaceId, date])` — one per filter/sort axis
+    `getMonetizationEntries`/`getMonetizationSummary`/
+    `getMonetizationByCategory` actually query by.
 
 ### Audit
 
@@ -145,9 +183,15 @@ document, written alongside the Inbox migration — see
   `metadata Json?` (action-specific detail, e.g. `{ from, to }` for a
   status change), and one nullable FK per auditable entity type
   (`contentItemId`, `calendarEventId`, `workspaceMembershipId`,
-  `assetId`, `socialAccountId`, `conversationId`), each `onDelete:
-  SetNull` with its own index. See `ARCHITECTURE.md` for why this is one
-  wide table rather than a table per domain.
+  `assetId`, `socialAccountId`, `conversationId`,
+  `monetizationEntryId`), each `onDelete: SetNull` with its own index.
+  See `ARCHITECTURE.md` for why this is one wide table rather than a
+  table per domain. Deleting a `MonetizationEntry` is the one case where
+  the audit row deliberately does *not* set `monetizationEntryId` (there
+  would be nothing left to point at the instant the transaction commits)
+  — the deletion's `metadata` carries a snapshot (title, category,
+  amount, currency) instead, so the audit trail still shows what was
+  deleted.
 
 ## Enums reference
 
@@ -165,8 +209,11 @@ document, written alongside the Inbox migration — see
 | `MessageSender` | `them`, `you` |
 | `InboxItemType` | `Comment`, `Direct Message`, `Mention`, `Notification` |
 | `ConversationStatus` | `Open`, `Resolved` |
-| `DealStatus` | `Negotiating`, `In Progress`, `Signed`, `Paid`, `Completed` |
-| `AuditAction` | see `prisma/schema.prisma` — grouped by domain (Content, Calendar, Team, Asset, SocialAccount, Conversation) |
+| `MonetizationType` | `Income`, `Expense` |
+| `MonetizationCategory` | `Sponsorship`, `Affiliate`, `Platform Revenue`, `Merchandise`, `Digital Product`, `Other Income`, `Expense` |
+| `MonetizationStatus` | `Negotiating`, `In Progress`, `Pending`, `Paid`, `Cancelled` |
+| `MonetizationProvider` | `Manual`, `YouTube`, `TikTok`, `Patreon`, `Stripe`, `Lemon Squeezy` |
+| `AuditAction` | see `prisma/schema.prisma` — grouped by domain (Content, Calendar, Team, Asset, SocialAccount, Conversation, MonetizationEntry) |
 
 See `API.md` for the Server Actions and route handlers that read and
 write these tables.

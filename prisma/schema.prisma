@@ -2,8 +2,9 @@
 //
 // Models every entity from the original src/lib/mock-data.ts prototype,
 // migrated one page at a time onto real Prisma/Postgres queries (see
-// PRODUCT_ROADMAP.md for the migration log). As of the Social Accounts
-// migration, only Inbox and Monetization still read from mock-data.ts.
+// PRODUCT_ROADMAP.md for the migration log). As of the Monetization
+// migration, every page reads from this schema — mock-data.ts now only
+// holds client-safe type unions (TeamRole, Platform, etc.), no data.
 
 generator client {
   provider = "prisma-client"
@@ -73,7 +74,7 @@ enum SocialStatus {
   /// revocation, or a token past its tokenExpiresAt) — distinct from a
   /// user-initiated NotConnected, since the fix here is Reconnect, not
   /// Connect (which creates a brand-new account row).
-  NeedsReauth @map("Needs Reauth")
+  NeedsReauth  @map("Needs Reauth")
 }
 
 enum MessageSender {
@@ -100,39 +101,79 @@ enum ConversationStatus {
   Resolved
 }
 
-enum DealStatus {
+enum MonetizationType {
+  Income
+  Expense
+}
+
+/**
+ * The provider-agnostic discriminator for a monetization entry — a signed
+ * sponsorship, an affiliate payout, ad revenue from a connected platform,
+ * a merch sale, a digital product sale, misc other income, or an expense
+ * all map onto exactly one of these, so summaries/timeline/filtering
+ * never branch on the underlying provider. `Expense` is the only
+ * non-income value; every other value's `MonetizationType` is `Income`.
+ */
+enum MonetizationCategory {
+  Sponsorship
+  Affiliate
+  PlatformRevenue @map("Platform Revenue")
+  Merchandise
+  DigitalProduct  @map("Digital Product")
+  OtherIncome     @map("Other Income")
+  Expense
+}
+
+enum MonetizationStatus {
   Negotiating
-  InProgress @map("In Progress")
-  Signed
+  InProgress  @map("In Progress")
+  Pending
   Paid
-  Completed
+  Cancelled
+}
+
+/**
+ * Where this entry's data came from. Manual is every entry today (see
+ * TECH_DEBT.md) — the rest are reserved for future integrations
+ * (OAuth-connected platforms' ad revenue, Stripe/Lemon Squeezy payment
+ * webhooks) that would populate rows in this same shape. Adding a new
+ * provider is the same additive enum extension `Platform` itself already
+ * went through once (Social Accounts migration), not a schema redesign.
+ */
+enum MonetizationProvider {
+  Manual
+  YouTube
+  TikTok
+  Patreon
+  Stripe
+  LemonSqueezy @map("Lemon Squeezy")
 }
 
 model User {
-  id           String              @id
+  id           String                @id
   name         String
-  email        String              @unique
+  email        String                @unique
   passwordHash String
   initials     String
-  createdAt    DateTime            @default(now())
+  createdAt    DateTime              @default(now())
   memberships  WorkspaceMembership[]
 }
 
 model Workspace {
-  id             String              @id
-  name           String
-  slug           String              @unique
-  plan           Plan                @default(Free)
-  initials       String
-  createdAt      DateTime            @default(now())
-  memberships    WorkspaceMembership[]
-  content        ContentItem[]
-  calendarEvents CalendarEvent[]
-  assets         Asset[]
-  socialAccounts SocialAccount[]
-  conversations  Conversation[]
-  deals          Deal[]
-  auditLogs      AuditLog[]
+  id                  String                @id
+  name                String
+  slug                String                @unique
+  plan                Plan                  @default(Free)
+  initials            String
+  createdAt           DateTime              @default(now())
+  memberships         WorkspaceMembership[]
+  content             ContentItem[]
+  calendarEvents      CalendarEvent[]
+  assets              Asset[]
+  socialAccounts      SocialAccount[]
+  conversations       Conversation[]
+  monetizationEntries MonetizationEntry[]
+  auditLogs           AuditLog[]
 }
 
 model WorkspaceMembership {
@@ -143,9 +184,9 @@ model WorkspaceMembership {
   status      MemberStatus @default(Active)
   createdAt   DateTime     @default(now())
 
-  user                 User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workspace            Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  auditLogs            AuditLog[]
+  user                  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace             Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  auditLogs             AuditLog[]
   assignedConversations Conversation[]
 
   @@unique([userId, workspaceId])
@@ -153,7 +194,7 @@ model WorkspaceMembership {
 }
 
 model ContentItem {
-  id             String    @id
+  id             String        @id
   workspaceId    String
   title          String
   status         ContentStatus
@@ -161,11 +202,11 @@ model ContentItem {
   scheduledAt    DateTime
   authorName     String
   authorInitials String
-  body           String    @db.Text
+  body           String        @db.Text
   tags           String[]
-  createdAt      DateTime  @default(now())
+  createdAt      DateTime      @default(now())
 
-  workspace    Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace    Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   assets       Asset[]
   comments     ContentComment[]
   reviewEvents ReviewEvent[]
@@ -287,27 +328,27 @@ model SocialAccount {
  * yet.
  */
 model Conversation {
-  id                     String              @id
+  id                     String             @id
   workspaceId            String
   platform               Platform
-  type                   InboxItemType       @default(DirectMessage)
+  type                   InboxItemType      @default(DirectMessage)
   contactName            String
   contactHandle          String
   contactInitials        String
   externalId             String?
-  status                 ConversationStatus  @default(Open)
-  unread                 Boolean             @default(false)
-  archived               Boolean             @default(false)
+  status                 ConversationStatus @default(Open)
+  unread                 Boolean            @default(false)
+  archived               Boolean            @default(false)
   assignedToMembershipId String?
   metadata               Json?
-  createdAt              DateTime            @default(now())
-  updatedAt              DateTime            @updatedAt
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 
-  workspace    Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  assignedTo   WorkspaceMembership?  @relation(fields: [assignedToMembershipId], references: [id], onDelete: SetNull)
-  messages     InboxMessage[]
-  notes        ConversationNote[]
-  auditLogs    AuditLog[]
+  workspace  Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  assignedTo WorkspaceMembership? @relation(fields: [assignedToMembershipId], references: [id], onDelete: SetNull)
+  messages   InboxMessage[]
+  notes      ConversationNote[]
+  auditLogs  AuditLog[]
 
   @@index([workspaceId])
   @@index([workspaceId, archived])
@@ -347,18 +388,47 @@ model ConversationNote {
   @@index([conversationId])
 }
 
-model Deal {
-  id          String     @id
-  workspaceId String
-  brand       String
-  title       String
-  valueLabel  String
-  status      DealStatus
-  dueDate     DateTime
+/**
+ * A single revenue or expense line item — a sponsorship deal, an
+ * affiliate payout, platform ad revenue, a merch sale, a digital product
+ * sale, misc other income, or an expense. `externalId` + `metadata` exist
+ * so a real provider integration (a Stripe payment, a YouTube AdSense
+ * payout) can populate rows in this same shape later without a schema
+ * migration — nothing reads `metadata` yet, matching the same pattern
+ * used for `SocialAccount` and `Conversation`.
+ */
+model MonetizationEntry {
+  id               String               @id
+  workspaceId      String
+  type             MonetizationType
+  category         MonetizationCategory
+  provider         MonetizationProvider @default(Manual)
+  platform         Platform?
+  title            String
+  counterpartyName String?
+  description      String?              @db.Text
+  status           MonetizationStatus   @default(Pending)
+  /// Always the entry's own currency (see `currency`) — no cross-currency conversion happens anywhere (see TECH_DEBT.md).
+  amount           Decimal              @db.Decimal(12, 2)
+  /// ISO 4217 code. Validated against a small curated list in the action layer, not a DB enum — new currencies never need a migration.
+  currency         String               @default("USD")
+  /// The date this entry is attributed to for summaries/timeline grouping — independent of dueDate/paidAt, since either may be unset.
+  date             DateTime             @default(now())
+  dueDate          DateTime?
+  paidAt           DateTime?
+  externalId       String?
+  metadata         Json?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  auditLogs AuditLog[]
 
   @@index([workspaceId])
+  @@index([workspaceId, type])
+  @@index([workspaceId, category])
+  @@index([workspaceId, status])
+  @@index([workspaceId, date])
 }
 
 enum AuditAction {
@@ -393,6 +463,10 @@ enum AuditAction {
   ConversationResolved
   ConversationReopened
   ConversationReplied
+  MonetizationEntryCreated
+  MonetizationEntryUpdated
+  MonetizationEntryStatusChanged
+  MonetizationEntryDeleted
 }
 
 /**
@@ -402,7 +476,7 @@ enum AuditAction {
  * status changes, and comments all have a durable trail from day one.
  */
 model AuditLog {
-  id                    String   @id
+  id                    String      @id
   workspaceId           String
   contentItemId         String?
   calendarEventId       String?
@@ -410,11 +484,12 @@ model AuditLog {
   assetId               String?
   socialAccountId       String?
   conversationId        String?
+  monetizationEntryId   String?
   actorId               String
   actorName             String
   action                AuditAction
   metadata              Json?
-  createdAt             DateTime @default(now())
+  createdAt             DateTime    @default(now())
 
   workspace           Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   contentItem         ContentItem?         @relation(fields: [contentItemId], references: [id], onDelete: SetNull)
@@ -423,6 +498,7 @@ model AuditLog {
   asset               Asset?               @relation(fields: [assetId], references: [id], onDelete: SetNull)
   socialAccount       SocialAccount?       @relation(fields: [socialAccountId], references: [id], onDelete: SetNull)
   conversation        Conversation?        @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  monetizationEntry   MonetizationEntry?   @relation(fields: [monetizationEntryId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId])
   @@index([contentItemId])
@@ -431,4 +507,5 @@ model AuditLog {
   @@index([assetId])
   @@index([socialAccountId])
   @@index([conversationId])
+  @@index([monetizationEntryId])
 }

@@ -15,7 +15,7 @@ Closed the critical security/data-hygiene gaps found in the V1 review.
 - Removed the dead global search input
 - Stood up CI (lint, typecheck, tests, build) and a first real test suite
 
-## Phase 1 — Make the Data Real (in progress)
+## Phase 1 — Make the Data Real ✅ Complete
 
 Moving every page off `mock-data.ts` onto Postgres/Prisma, one page at a time,
 behind real workspace-scoped access control.
@@ -457,7 +457,74 @@ behind real workspace-scoped access control.
         correctly dropping out of the default view), assigning to a
         teammate, an Editor seeing the inbox but every mutation control
         disabled, and the empty-workspace and loading states
-- [ ] Remaining pages still on mock data: Monetization
+- [x] Monetization migrated to Server Components + Prisma, as the
+      long-term financial hub (`src/lib/monetization-data.ts` for reads,
+      `src/lib/monetization-actions.ts` for writes) — the last page still
+      on mock data
+      - Replaced the narrow `Deal` model (never wired up — see
+        `DATABASE.md`'s prior note) with a single generic
+        `MonetizationEntry` table covering every revenue and expense
+        source in one shape: sponsorship deals, affiliate income,
+        platform revenue, merchandise, digital products, other income,
+        and expenses. `MonetizationCategory` is the discriminator
+        (`Expense` is the only non-income value; `CATEGORY_TYPE` in
+        `src/lib/monetization-types.ts` derives `MonetizationType` from
+        it so the client never has to keep the two in sync)
+      - Extended the provider-agnostic pattern (Inbox, Social Accounts) a
+        third time: `MonetizationProvider` (Manual today; YouTube/TikTok/
+        Patreon/Stripe/LemonSqueezy reserved) plus unused `externalId`/
+        `metadata` fields, so a real payout/payment-webhook integration
+        can populate rows in this same shape later without a schema
+        migration. A nullable `platform` field (reusing the existing
+        `Platform` enum) lets a Sponsorship or Platform Revenue entry
+        attribute itself to a specific channel
+      - `status` (`Negotiating`/`In Progress`/`Pending`/`Paid`/
+        `Cancelled`) is independent of `date`/`dueDate`/`paidAt` —
+        "Overdue" is derived at read time (`isOverdue()`: a
+        still-outstanding status past its `dueDate`), not stored,
+        mirroring Social Accounts' derived connection-health pattern
+      - Currency is a validated free-string column
+        (`SUPPORTED_CURRENCIES`), not a DB enum, so adding a new currency
+        is a plain code change. Summary/timeline/category aggregates are
+        scoped to a single `PRIMARY_CURRENCY` ("USD") since this app has
+        no real FX conversion — tracked explicitly in `TECH_DEBT.md`
+      - Reused the cursor-pagination pattern established by Inbox for the
+        entries table, and Prisma `aggregate`/`groupBy` (real SQL SUM/
+        GROUP BY) for the summary cards and the by-category breakdown —
+        the monthly timeline buckets in application code after a single
+        minimal-select query, the same convention Analytics' posting-
+        frequency chart already used, since Prisma can't `groupBy` a
+        truncated date
+      - Full CRUD via five Server Actions (`createMonetizationEntryAction`,
+        `updateMonetizationEntryAction`, `updateMonetizationEntryStatusAction`,
+        `deleteMonetizationEntryAction`, plus the read-only
+        `getMonetizationEntriesAction`/`getMonetizationOverviewAction` the
+        client re-fetches after a mutation instead of a full
+        `router.refresh()` — that would otherwise reset the entries
+        table's active filters), each gated on `manageMonetization`
+        (Owner-only, unchanged from the pre-migration permission) and
+        paired with its own `AuditAction`
+      - Found and fixed a real Tailwind v4 bug while building the revenue
+        timeline chart: a `@theme` color token defined as `var(--other-token)`
+        (rather than a literal value) gets silently deduped against that
+        other token and never gets its own utility class generated —
+        `bg-chart-income`/`bg-chart-expense` rendered as fully transparent
+        until the chart palette (`src/app/globals.css`) used literal
+        OKLCH values instead of aliasing `--primary`/`--warning`
+      - 32 Vitest integration tests (data layer — filtering, tenant
+        isolation, cursor pagination, month-over-month aggregation — and
+        actions — permissions, persistence, audit logging, status-transition
+        `paidAt` stamping) plus the client board's no-`useEffect`-fetch
+        pattern established by Inbox (avoids the same
+        `react-hooks/set-state-in-effect` pitfall the Inbox form dialog
+        hit; the entry form dialog uses a `key`-remount instead of an
+        effect to reset on open)
+      - Verified desktop and mobile: creating, editing, changing status
+        (including the Paid/`paidAt` stamp), deleting, every filter and
+        search narrowing the table and mobile card list, the Overdue
+        badge on a past-due Pending entry, an empty workspace's zero
+        state, and the revenue timeline chart/monthly summary table both
+        rendering real bar heights after the Tailwind fix above
 
 ## Phase 2 — Earn Trust at Scale (not started)
 

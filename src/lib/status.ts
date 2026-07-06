@@ -1,5 +1,6 @@
-import type { ContentStatus, DealStatus } from "@/lib/mock-data";
+import type { ContentStatus } from "@/lib/mock-data";
 import type { ConversationStatus } from "@/lib/inbox-types";
+import type { MonetizationStatus } from "@/lib/monetization-types";
 import type { SocialStatus } from "@/lib/social-account-types";
 
 export function statusVariant(
@@ -46,17 +47,18 @@ export function conversationStatusVariant(
   return status === "Resolved" ? "success" : "outline";
 }
 
-export function dealStatusVariant(
-  status: DealStatus
-): "default" | "secondary" | "outline" | "success" | "warning" {
+export function monetizationStatusVariant(
+  status: MonetizationStatus
+): "default" | "secondary" | "outline" | "success" | "warning" | "destructive" {
   switch (status) {
     case "Paid":
-    case "Completed":
       return "success";
-    case "Signed":
-      return "default";
-    case "In Progress":
+    case "Pending":
       return "warning";
+    case "InProgress":
+      return "default";
+    case "Cancelled":
+      return "destructive";
     case "Negotiating":
     default:
       return "outline";

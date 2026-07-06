@@ -22,6 +22,17 @@ export function formatRelativeTime(date: Date, now: Date = new Date()): string {
   return formatShortDate(date);
 }
 
+/** "$4,500" / "€1,200.50" — a Decimal-as-string amount (Prisma's Decimal serializes as a string) plus its ISO 4217 currency code. */
+export function formatCurrency(amount: number | string, currency: string): string {
+  const value = typeof amount === "string" ? Number(amount) : amount;
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
 /** "340 KB" / "96.2 MB", matching the display style the old mock asset sizes used. */
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;

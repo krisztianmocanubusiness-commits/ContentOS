@@ -281,22 +281,77 @@ async function main() {
     await prisma.conversationNote.upsert({ where: { id: note.id }, update: note, create: note });
   }
 
-  const deals = [
-    { id: "d1", workspaceId: "keris", brand: "Glowlux Skincare", title: "Instagram reel package", valueLabel: "$4,500", status: "Signed" as const, dueDate: "Jul 15" },
-    { id: "d2", workspaceId: "keris", brand: "Trailhead Apparel", title: "TikTok UGC series", valueLabel: "$6,000", status: "InProgress" as const, dueDate: "Jul 20" },
-    { id: "d3", workspaceId: "keris", brand: "Wanderly Luggage", title: "Story takeover", valueLabel: "$1,500", status: "Negotiating" as const, dueDate: "Aug 1" },
-    { id: "d4", workspaceId: "keris", brand: "Solstice Sunglasses", title: "YouTube integration", valueLabel: "$3,200", status: "Paid" as const, dueDate: "Jun 25" },
-    { id: "d5", workspaceId: "buildible", brand: "DataSync Co", title: "Newsletter sponsorship", valueLabel: "$2,500", status: "Signed" as const, dueDate: "Jul 10" },
-    { id: "d6", workspaceId: "buildible", brand: "CloudOps Inc", title: "Webinar co-sponsor", valueLabel: "$2,000", status: "Completed" as const, dueDate: "Jun 20" },
-    { id: "d7", workspaceId: "buildible", brand: "Flowbase", title: "Affiliate partnership", valueLabel: "$1,600", status: "InProgress" as const, dueDate: "Jul 25" },
-    { id: "d8", workspaceId: "buildible", brand: "PipelineIQ", title: "Case study swap", valueLabel: "$0", status: "Negotiating" as const, dueDate: "Aug 5" },
+  // A spread of categories/statuses/providers/platforms/currencies across
+  // several months, so the revenue timeline, category breakdown, and
+  // pending/overdue states all have something real to show.
+  type MonetizationSeed = {
+    id: string;
+    workspaceId: string;
+    type: "Income" | "Expense";
+    category:
+      | "Sponsorship"
+      | "Affiliate"
+      | "PlatformRevenue"
+      | "Merchandise"
+      | "DigitalProduct"
+      | "OtherIncome"
+      | "Expense";
+    provider?: "Manual" | "YouTube" | "TikTok" | "Patreon" | "Stripe" | "LemonSqueezy";
+    platform?: "Instagram" | "TikTok" | "X" | "LinkedIn" | "YouTube" | "Facebook" | "Threads" | "Pinterest";
+    title: string;
+    counterpartyName?: string;
+    status: "Negotiating" | "InProgress" | "Pending" | "Paid" | "Cancelled";
+    amount: number;
+    currency?: string;
+    date: string;
+    dueDate?: string;
+  };
+
+  const monetizationEntries: MonetizationSeed[] = [
+    // Keris (creator workspace)
+    { id: "me1", workspaceId: "keris", type: "Income", category: "Sponsorship", title: "Instagram reel package", counterpartyName: "Glowlux Skincare", status: "Paid", amount: 4500, date: "Jun 20", dueDate: "Jun 20" },
+    { id: "me2", workspaceId: "keris", type: "Income", category: "Sponsorship", title: "TikTok UGC series", counterpartyName: "Trailhead Apparel", status: "InProgress", amount: 6000, date: "Jul 5", dueDate: "Jul 20" },
+    { id: "me3", workspaceId: "keris", type: "Income", category: "Sponsorship", title: "Story takeover", counterpartyName: "Wanderly Luggage", status: "Negotiating", amount: 1500, date: "Jul 6", dueDate: "Aug 1" },
+    { id: "me4", workspaceId: "keris", type: "Income", category: "Sponsorship", title: "YouTube integration", counterpartyName: "Solstice Sunglasses", status: "Paid", amount: 3200, date: "Jun 25", dueDate: "Jun 25", platform: "YouTube" },
+    { id: "me5", workspaceId: "keris", type: "Income", category: "Sponsorship", title: "Radiant Beauty co-post", counterpartyName: "Radiant Beauty", status: "Pending", amount: 2800, date: "Jun 1", dueDate: "Jun 1" },
+    { id: "me6", workspaceId: "keris", type: "Income", category: "Sponsorship", title: "FitTrack app promo", counterpartyName: "FitTrack", status: "Cancelled", amount: 1800, date: "Jul 1", dueDate: "Jul 1" },
+    { id: "me7", workspaceId: "keris", type: "Income", category: "Affiliate", title: "Amazon affiliate payout — June", status: "Paid", amount: 890, date: "Jun 30" },
+    { id: "me8", workspaceId: "keris", type: "Income", category: "Affiliate", title: "LTK commission — May", status: "Paid", amount: 650, date: "May 31" },
+    { id: "me9", workspaceId: "keris", type: "Income", category: "PlatformRevenue", title: "YouTube AdSense payout", status: "Paid", amount: 1240, date: "Jun 15", provider: "YouTube", platform: "YouTube" },
+    { id: "me10", workspaceId: "keris", type: "Income", category: "PlatformRevenue", title: "TikTok Creator Fund", status: "Paid", amount: 310, date: "Jun 10", provider: "TikTok", platform: "TikTok" },
+    { id: "me11", workspaceId: "keris", type: "Income", category: "Merchandise", title: "Merch drop — hoodies", status: "Paid", amount: 2100, date: "Apr 18" },
+    { id: "me12", workspaceId: "keris", type: "Income", category: "DigitalProduct", title: "Lightroom preset pack sales", status: "Paid", amount: 980, date: "Mar 22" },
+    { id: "me13", workspaceId: "keris", type: "Income", category: "OtherIncome", title: "Speaking fee — creator meetup", status: "Paid", amount: 500, date: "Feb 14" },
+    { id: "me14", workspaceId: "keris", type: "Expense", category: "Expense", title: "Video editor contractor", status: "Paid", amount: 1200, date: "Jun 28" },
+    { id: "me15", workspaceId: "keris", type: "Expense", category: "Expense", title: "Adobe Creative Cloud", status: "Paid", amount: 55, date: "Jun 1" },
+    { id: "me16", workspaceId: "keris", type: "Expense", category: "Expense", title: "Studio lighting equipment", status: "Paid", amount: 340, date: "May 5" },
+
+    // Buildible (B2B SaaS workspace)
+    { id: "me17", workspaceId: "buildible", type: "Income", category: "Sponsorship", title: "Newsletter sponsorship", counterpartyName: "DataSync Co", status: "Paid", amount: 2500, date: "Jun 10", dueDate: "Jun 10" },
+    { id: "me18", workspaceId: "buildible", type: "Income", category: "Sponsorship", title: "Webinar co-sponsor", counterpartyName: "CloudOps Inc", status: "Paid", amount: 2000, date: "Jun 20", dueDate: "Jun 20" },
+    { id: "me19", workspaceId: "buildible", type: "Income", category: "Affiliate", title: "Affiliate partnership", counterpartyName: "Flowbase", status: "InProgress", amount: 1600, date: "Jul 5", dueDate: "Jul 25" },
+    { id: "me20", workspaceId: "buildible", type: "Income", category: "Sponsorship", title: "Case study swap", counterpartyName: "PipelineIQ", status: "Negotiating", amount: 0, date: "Jul 6", dueDate: "Aug 5" },
+    { id: "me21", workspaceId: "buildible", type: "Income", category: "Sponsorship", title: "Beta partner co-marketing", counterpartyName: "Nova Retail", status: "Cancelled", amount: 1200, date: "Jul 1", dueDate: "Jul 15" },
+    { id: "me22", workspaceId: "buildible", type: "Income", category: "PlatformRevenue", title: "Stripe billing — Pro plan upsells", status: "Paid", amount: 3200, date: "Jun 30", provider: "Stripe" },
+    { id: "me23", workspaceId: "buildible", type: "Income", category: "OtherIncome", title: "Consulting retainer", status: "Paid", amount: 1500, date: "May 15" },
+    { id: "me24", workspaceId: "buildible", type: "Expense", category: "Expense", title: "AWS hosting", status: "Paid", amount: 890, date: "Jun 1" },
+    { id: "me25", workspaceId: "buildible", type: "Expense", category: "Expense", title: "Contractor — backend dev", status: "Paid", amount: 4200, date: "Jun 15" },
+    { id: "me26", workspaceId: "buildible", type: "Expense", category: "Expense", title: "Conference sponsorship spend", status: "Paid", amount: 600, date: "Apr 10" },
+    { id: "me27", workspaceId: "buildible", type: "Expense", category: "Expense", title: "Contractor invoice — designer", status: "Pending", amount: 750, date: "Jun 25", dueDate: "Jun 25" },
   ];
-  for (const { dueDate, ...deal } of deals) {
-    await prisma.deal.upsert({
-      where: { id: deal.id },
-      update: { ...deal, dueDate: shortDate(dueDate) },
-      create: { ...deal, dueDate: shortDate(dueDate) },
-    });
+
+  for (const { id, date, dueDate, provider, platform, counterpartyName, currency, ...entry } of monetizationEntries) {
+    const data = {
+      ...entry,
+      counterpartyName: counterpartyName ?? null,
+      provider: provider ?? "Manual",
+      platform: platform ?? null,
+      currency: currency ?? "USD",
+      date: shortDate(date),
+      dueDate: dueDate ? shortDate(dueDate) : null,
+      paidAt: entry.status === "Paid" ? shortDate(dueDate ?? date) : null,
+    };
+    await prisma.monetizationEntry.upsert({ where: { id }, update: data, create: { id, ...data } });
   }
 
   console.log("Seed complete.");

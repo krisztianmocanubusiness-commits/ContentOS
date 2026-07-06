@@ -2,10 +2,11 @@
 
 How Content OS is put together, and the conventions every page migration
 (Content, Dashboard, Calendar, Analytics, Team, Assets, Social Accounts,
-Inbox — see `PRODUCT_ROADMAP.md` for the migration log) follows. This is
-the first version of this document, written alongside the Inbox
-migration; it describes the system as it exists today, not a target
-state.
+Inbox, Monetization — see `PRODUCT_ROADMAP.md` for the migration log)
+follows. Every page now reads from Prisma/Postgres; none are left on
+`src/lib/mock-data.ts`. First written alongside the Inbox migration,
+updated for Monetization; it describes the system as it exists today,
+not a target state.
 
 ## Stack
 
@@ -111,8 +112,8 @@ being bolted on later.
 
 ## The provider-agnostic pattern
 
-Two migrations needed to model "a real external integration will plug in
-here later, but is simulated today," and converged on the same shape:
+Three migrations needed to model "a real external integration will plug
+in here later, but is simulated today," and converged on the same shape:
 model the *data*, not a runtime adapter class, unless there's actual I/O
 to abstract.
 
@@ -120,10 +121,10 @@ to abstract.
   interface (`src/lib/storage/`) with a local-disk implementation today
   and an R2-shaped implementation as the drop-in replacement — because
   there's a real operation (read/write bytes) to swap.
-- **Social Accounts** and **Inbox** (no bytes, just structured data
-  standing in for "whatever a provider's API/webhook would eventually
-  send") don't introduce a runtime adapter — there's nothing to swap at
-  call time. Instead:
+- **Social Accounts**, **Inbox**, and **Monetization** (no bytes, just
+  structured data standing in for "whatever a provider's API/webhook
+  would eventually send") don't introduce a runtime adapter — there's
+  nothing to swap at call time. Instead:
   - `SocialAccount.scopes`/`tokenExpiresAt` are populated with plausible
     simulated values instead of a real OAuth handshake, but the schema
     already matches a real handshake's output.
@@ -135,9 +136,16 @@ to abstract.
     whatever a given platform's payload looks like) exist unused today so
     a real integration can populate rows in this same shape later without
     a schema migration.
+  - `MonetizationEntry.category` (Sponsorship / Affiliate / Platform
+    Revenue / Merchandise / Digital Product / Other Income / Expense) is
+    the discriminator every revenue or expense source maps onto;
+    `MonetizationProvider` (Manual today; YouTube/TikTok/Patreon/Stripe/
+    Lemon Squeezy reserved) plus the same `externalId`/`metadata Json?`
+    pair exist for the same reason — a payout/payment-webhook integration
+    can populate rows later without a migration.
 
-Both are tracked in `TECH_DEBT.md` as "simulated, not real" — the point
-of the pattern is that closing the debt is additive (a new webhook
+All three are tracked in `TECH_DEBT.md` as "simulated, not real" — the
+point of the pattern is that closing the debt is additive (a new webhook
 receiver, a real OAuth callback) rather than a rewrite.
 
 ## Cursor-based pagination
@@ -180,6 +188,33 @@ search-input debounce is a `setTimeout` started from `onChange`, not an
 effect watching a `filters` object). Server state that needs to reflect a
 completed mutation is re-fetched explicitly by the handler that performed
 the mutation, not synchronized reactively.
+
+The same rule applies to a controlled create/edit form dialog that needs
+to reset its fields when it reopens for a different target (or for a
+fresh create after editing something): don't `useEffect` on `open`/
+`entry` to call `setState` for every field. Instead give the dialog a
+`key` tied to the target (`` `${entry?.id ?? "create"}-${open}` `` in
+Monetization's `EntryFormDialog`) so React remounts it and its
+`useState(() => entry?.field ?? default)` lazy initializers run fresh —
+no effect needed at all.
+
+## Tailwind theme tokens: use literal values, not `var(--other-token)`
+
+Discovered while building the Monetization revenue chart: a `@theme`
+color token defined as `var(--other-token)` (e.g. `--chart-income:
+var(--primary);`) gets silently deduplicated against that other token —
+Tailwind (v4.3, via `@tailwindcss/postcss`) never generates a
+`bg-chart-income` utility for it at all, not even an incorrect one. The
+class applies with no styles, which reads as "the color is transparent"
+rather than "the class doesn't exist," making it easy to miss. Chart
+colors that happen to reuse an existing semantic color's value (see
+`src/app/globals.css`'s `--chart-income`/`--chart-expense`) need their
+own literal value (`oklch(0.56 0.2 276)`, not `var(--primary)`) even when
+that value is numerically identical to another token, so Tailwind treats
+them as distinct generatable utilities. Verify a new custom color
+utility actually compiled by checking the served CSS
+(`curl <chunk-url> | grep bg-your-token`) rather than trusting that
+`@theme` alone is enough.
 
 ## Testing
 

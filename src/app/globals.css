@@ -43,6 +43,18 @@
 
   --success: oklch(0.63 0.15 155);
   --warning: oklch(0.75 0.15 75);
+
+  /* Chart-only categorical pair (income/expense) — validated against
+     scripts/validate_palette.js in both modes. Literal values (not
+     var(--primary)/var(--warning)) so Tailwind always generates a
+     distinct bg-chart-income/bg-chart-expense utility instead of
+     deduping an alias against an existing token's value. Light mode
+     happens to match --primary/--warning; dark mode needs its own
+     darker expense step since --warning's dark value (L 0.8) falls
+     outside the chart lightness band (L 0.48-0.67), per the dataviz
+     skill's "dark mode is its own steps, not an automatic flip" rule. */
+  --chart-income: oklch(0.56 0.2 276);
+  --chart-expense: oklch(0.75 0.15 75);
 }
 
 .dark {
@@ -83,6 +95,9 @@
 
   --success: oklch(0.7 0.16 155);
   --warning: oklch(0.8 0.15 80);
+
+  --chart-income: oklch(0.66 0.19 276);
+  --chart-expense: oklch(0.65 0.15 75);
 }
 
 @theme inline {
@@ -110,6 +125,8 @@
   --color-ring: var(--ring);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-chart-income: var(--chart-income);
+  --color-chart-expense: var(--chart-expense);
 
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);

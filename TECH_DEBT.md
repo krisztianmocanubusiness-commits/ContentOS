@@ -160,3 +160,61 @@ conversation (and, if it's currently open in the thread pane, the detail
 view) when another actor's mutation lands — the same
 `revalidatePath`-triggered Server Actions already in place would just
 need a broadcast step added alongside them.
+
+## No cross-currency conversion in Monetization summaries
+
+**Introduced:** Monetization migration.
+
+`MonetizationEntry.currency` is a real per-entry field (any of
+`SUPPORTED_CURRENCIES` in `src/lib/monetization-types.ts`), and every row
+displays in its own currency. But the summary cards, category breakdown,
+and revenue timeline (`src/lib/monetization-data.ts`) only sum entries in
+`PRIMARY_CURRENCY` ("USD") — an entry recorded in EUR or GBP shows up in
+the entries table but is silently excluded from every aggregate. This is
+correct-but-incomplete rather than wrong: a workspace that only ever
+transacts in USD (true of the seed data) never notices, but a workspace
+with real multi-currency income would see totals that don't match what
+they can see in the table.
+
+**Closing it:** either restrict entry currency to a single
+workspace-level setting (simplest — remove the per-entry choice), or add
+a real FX-rate source (a daily-rate API, cached) and convert every
+non-primary-currency entry to the primary currency at aggregation time,
+storing the rate used on the entry so historical aggregates don't shift
+as rates change.
+
+## Monetization data is 100% manually entered
+
+**Introduced:** Monetization migration.
+
+Like Social Accounts and Inbox, there's no real integration populating
+`MonetizationEntry` rows — `MonetizationProvider` (YouTube, TikTok,
+Patreon, Stripe, Lemon Squeezy) exists as a schema value today only so a
+manually-created entry can note where the money *conceptually* came from;
+every entry is created through the New Entry form or `prisma/seed.ts`,
+and `externalId`/`metadata` are populated for exactly zero rows.
+
+**Closing it:** per provider, a real API/webhook integration (YouTube
+Analytics/AdSense reporting, TikTok Creator Fund API, Patreon's API,
+Stripe/Lemon Squeezy payment webhooks) that upserts `MonetizationEntry`
+rows keyed by `externalId` for idempotency — additive to the current
+schema, not a rewrite, following the same pattern already used for
+Inbox's simulated providers.
+
+## No approval workflow for high-value Monetization entries
+
+**Introduced:** Monetization migration.
+
+Any Owner can create, edit, mark Paid, or delete any entry outright —
+there's no maker/checker step, no threshold above which a second person
+must confirm, and no way to flag an entry as disputed short of editing or
+deleting it. For a single-owner creator workspace this matches how the
+rest of the app's Owner-only `manageMonetization` permission already
+works, but a larger team tracking real revenue may want a review step
+before a large entry is marked Paid or before one is deleted outright.
+
+**Closing it:** an optional approval state on high-value entries (a
+configurable threshold), reusing the same `ReviewEvent`-style pattern
+Content already has for submit/approve/request-changes, gated on a
+second permission tier (e.g. only an Owner, not an Admin, can approve
+above the threshold) rather than a single flat `manageMonetization` gate.

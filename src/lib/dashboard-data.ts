@@ -63,6 +63,10 @@ const ACTIVITY_LABEL: Record<AuditAction, string> = {
   [AuditAction.ConversationResolved]: "resolved a conversation",
   [AuditAction.ConversationReopened]: "reopened a conversation",
   [AuditAction.ConversationReplied]: "replied to a conversation",
+  [AuditAction.MonetizationEntryCreated]: "added a monetization entry",
+  [AuditAction.MonetizationEntryUpdated]: "updated a monetization entry",
+  [AuditAction.MonetizationEntryStatusChanged]: "changed a monetization entry's status",
+  [AuditAction.MonetizationEntryDeleted]: "deleted a monetization entry",
 };
 
 export type DashboardActivityEntry = {
