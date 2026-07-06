@@ -75,7 +75,19 @@ export async function getWorkspaceAssets(
       ...(filters.search ? { name: { contains: filters.search, mode: "insensitive" as const } } : {}),
     },
     orderBy: { createdAt: "desc" },
-    include: { _count: { select: { content: true } } },
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      folder: true,
+      tags: true,
+      byteSize: true,
+      mimeType: true,
+      thumbnailKey: true,
+      status: true,
+      createdAt: true,
+      _count: { select: { content: true } },
+    },
   });
 
   return rows.map((row) => toAssetRow(row, row._count.content));

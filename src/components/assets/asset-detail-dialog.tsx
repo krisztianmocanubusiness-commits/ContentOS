@@ -193,7 +193,7 @@ export function AssetDetailDialog({
               className="flex items-center gap-2 pr-6"
             >
               <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} disabled={isPending} />
-              <Button type="submit" size="icon" className="size-8 shrink-0" disabled={isPending}>
+              <Button type="submit" size="icon" className="size-8 shrink-0" disabled={isPending} aria-label="Save name">
                 {isPending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
               </Button>
               <Button
@@ -203,6 +203,7 @@ export function AssetDetailDialog({
                 className="size-8 shrink-0"
                 onClick={() => setEditingName(false)}
                 disabled={isPending}
+                aria-label="Cancel rename"
               >
                 <XIcon className="size-4" />
               </Button>
@@ -254,7 +255,7 @@ export function AssetDetailDialog({
               className="flex items-center gap-2"
             >
               <Input autoFocus value={folder} onChange={(e) => setFolder(e.target.value)} disabled={isPending} />
-              <Button type="submit" size="icon" className="size-8 shrink-0" disabled={isPending}>
+              <Button type="submit" size="icon" className="size-8 shrink-0" disabled={isPending} aria-label="Save folder">
                 {isPending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
               </Button>
               <Button
@@ -264,6 +265,7 @@ export function AssetDetailDialog({
                 className="size-8 shrink-0"
                 onClick={() => setEditingFolder(false)}
                 disabled={isPending}
+                aria-label="Cancel move"
               >
                 <XIcon className="size-4" />
               </Button>
@@ -306,7 +308,7 @@ export function AssetDetailDialog({
                 onChange={(e) => setTagsInput(e.target.value)}
                 disabled={isPending}
               />
-              <Button type="submit" size="icon" className="size-8 shrink-0" disabled={isPending}>
+              <Button type="submit" size="icon" className="size-8 shrink-0" disabled={isPending} aria-label="Save tags">
                 {isPending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
               </Button>
               <Button
@@ -316,6 +318,7 @@ export function AssetDetailDialog({
                 className="size-8 shrink-0"
                 onClick={() => setEditingTags(false)}
                 disabled={isPending}
+                aria-label="Cancel editing tags"
               >
                 <XIcon className="size-4" />
               </Button>

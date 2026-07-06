@@ -217,10 +217,10 @@ export function CalendarBoard({
           <div className="flex items-center gap-2">
             <h3 className="min-w-40 text-sm font-semibold">{periodLabel}</h3>
             <div className="flex items-center gap-1">
-              <Button variant="outline" size="icon" className="size-9 sm:size-8" onClick={goPrev}>
+              <Button variant="outline" size="icon" className="size-9 sm:size-8" onClick={goPrev} aria-label={`Previous ${effectiveView}`}>
                 <ChevronLeft className="size-4" />
               </Button>
-              <Button variant="outline" size="icon" className="size-9 sm:size-8" onClick={goNext}>
+              <Button variant="outline" size="icon" className="size-9 sm:size-8" onClick={goNext} aria-label={`Next ${effectiveView}`}>
                 <ChevronRight className="size-4" />
               </Button>
               <Button variant="outline" size="sm" onClick={goToday}>

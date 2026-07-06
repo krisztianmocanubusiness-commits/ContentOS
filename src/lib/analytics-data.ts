@@ -265,7 +265,11 @@ export async function getApprovalTurnaround(
   bounds: DateRangeBounds
 ): Promise<ApprovalTurnaround> {
   const events = await prisma.reviewEvent.findMany({
-    where: { contentItem: { workspaceId } },
+    // A resolution event is always >= its submission's createdAt, and only
+    // submissions at/after bounds.start count — so this lower bound alone
+    // can't drop a pair the loop below would otherwise have counted, while
+    // keeping the scan from growing with the workspace's entire history.
+    where: { contentItem: { workspaceId }, createdAt: { gte: bounds.start } },
     orderBy: [{ contentItemId: "asc" }, { createdAt: "asc" }],
     select: { contentItemId: true, action: true, createdAt: true },
   });

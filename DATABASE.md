@@ -122,7 +122,10 @@ server and client code).
   - `@@index([workspaceId])`, `@@index([workspaceId, archived])`,
     `@@index([workspaceId, status])`, `@@index([assignedToMembershipId])`
     — one per the filter axes `getWorkspaceConversations` actually
-    queries by.
+    queries by. `@@index([workspaceId, archived, updatedAt])` (added in
+    the Production Stabilization pass) additionally covers the default
+    list query's exact WHERE + ORDER BY in one index scan — the shape
+    every Inbox page load hits.
 - **`InboxMessage`** — one message in the thread: `from`
   (`MessageSender`: `them`/`you`), `body`. Ordered by `createdAt` for
   display; the most recent one (by `createdAt desc`, `take: 1`) is what

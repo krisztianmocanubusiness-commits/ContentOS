@@ -555,7 +555,7 @@ export function InboxBoard({
                   className="flex-1"
                   disabled={!canManage || isMutationPending}
                 />
-                <Button type="submit" size="icon" disabled={!canManage || isMutationPending || !draft.trim()}>
+                <Button type="submit" size="icon" disabled={!canManage || isMutationPending || !draft.trim()} aria-label="Send reply">
                   <Send />
                 </Button>
               </form>

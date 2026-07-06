@@ -214,7 +214,7 @@ export function ContentDetailSheet({
             className="flex-1"
             disabled={pending}
           />
-          <Button type="submit" size="icon" disabled={!draft.trim() || pending}>
+          <Button type="submit" size="icon" disabled={!draft.trim() || pending} aria-label="Post comment">
             <Send />
           </Button>
         </form>

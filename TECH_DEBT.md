@@ -30,15 +30,26 @@ set their own password and flips `WorkspaceMembership.status` from
 
 ## In-memory rate limiting
 
-**Introduced:** Phase 0 (security hardening).
+**Introduced:** Phase 0 (security hardening). **Severity raised:**
+Production Stabilization pass, once actually deployed to Vercel.
 
-`src/lib/rate-limit.ts` rate-limits signup and login in-process. This
-works for a single server instance but resets on restart and doesn't
-coordinate across multiple instances — not safe once the app runs behind
-a load balancer with more than one process.
+`src/lib/rate-limit.ts` rate-limits signup and login with a plain
+in-process `Map`. This was written and accepted as "fine for one
+process, revisit before scaling to more than one" — but on Vercel's
+serverless Node runtime, "more than one process" isn't a future scaling
+milestone, it's the default execution model today. Concurrent requests
+can land on separate function instances with separate memory, and a cold
+start wipes the `Map` entirely. In practice this means login/signup
+brute-force protection is meaningfully weaker in the current production
+deployment than the code's own comment implies — it isn't "will degrade
+under load," it's already degraded.
 
-**Closing it:** move to a shared store (Redis or equivalent) keyed the
-same way, swapping the implementation behind the same call sites.
+**Closing it:** move to a shared store — Upstash Redis has a first-party
+Vercel integration and a free tier, and is close to a drop-in
+replacement for `rateLimit(key, limit, windowMs)`'s call sites (same
+three-argument shape, same call sites in `auth.ts` and
+`api/signup/route.ts`). This is the single highest-priority item in this
+register now that the app is publicly reachable.
 
 ## Self-role-edit is blocked entirely, not just the dangerous cases
 
@@ -218,3 +229,47 @@ configurable threshold), reusing the same `ReviewEvent`-style pattern
 Content already has for submit/approve/request-changes, gated on a
 second permission tier (e.g. only an Owner, not an Admin, can approve
 above the threshold) rather than a single flat `manageMonetization` gate.
+
+## Content and Calendar lists have no upper bound
+
+**Introduced:** Content and Calendar migrations. **Flagged:** Production
+Stabilization pass.
+
+`getWorkspaceContent` and `getWorkspaceCalendarEvents` fetch every row
+for the workspace, unconditionally — no `take`, no cursor. Content's
+version also eagerly loads every comment and every review event for
+every item in the same query. Inbox and Monetization both later
+established a cursor-pagination pattern for exactly this shape of
+problem (see `ARCHITECTURE.md`), but Content and Calendar predate it and
+were never retrofitted, because their board UI renders the whole list
+client-side with no "load more" affordance to hang pagination off of.
+
+This is deliberately **not** patched with a silent `take` cap — capping
+the query without any UI to reach what's past the cap would silently
+hide real data, which is worse than the current "correct but eventually
+slow" behavior. Left as a documented boundary rather than a rushed fix.
+
+**Closing it:** cursor-paginate both lists the same way Inbox does,
+which is real UI work (a "load more" control, or virtualization), not a
+one-line query change — correctly out of scope for a stabilization pass.
+Revisit once a single workspace's content library or calendar approaches
+the low hundreds of items.
+
+## Substring search can't use a standard index
+
+**Introduced:** Assets, Inbox, and Monetization migrations. **Flagged:**
+Production Stabilization pass.
+
+Every text search in the app (`Asset.name`, `Conversation.contactName`,
+`MonetizationEntry.title`, etc.) uses Prisma's `contains` with
+`mode: "insensitive"` — a Postgres `ILIKE '%term%'`, which a standard
+B-tree index (including every `@@index` already in the schema) cannot
+accelerate. Today's search boxes are correct and simple; at meaningfully
+larger per-workspace row counts they become sequential scans.
+
+**Closing it:** a Postgres `pg_trgm` extension + GIN trigram index on the
+searched columns, which speeds up `ILIKE` without changing any query
+code — purely additive at the database layer. Needs `CREATE EXTENSION
+pg_trgm`, which requires confirming the hosting Postgres (Neon, Vercel
+Postgres, etc.) allows it — most managed providers do, but it's a
+deploy-time check, not an assumption.

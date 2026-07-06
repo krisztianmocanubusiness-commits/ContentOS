@@ -353,6 +353,11 @@ model Conversation {
   @@index([workspaceId])
   @@index([workspaceId, archived])
   @@index([workspaceId, status])
+  // Covers the default (archived: false, no other filter) conversation-list
+  // query's exact WHERE + ORDER BY — the most common shape hit on every
+  // Inbox page load — so it's a single index scan instead of a filter
+  // followed by a separate sort step.
+  @@index([workspaceId, archived, updatedAt])
   @@index([assignedToMembershipId])
 }
 

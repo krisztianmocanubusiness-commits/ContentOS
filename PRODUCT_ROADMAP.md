@@ -526,6 +526,49 @@ behind real workspace-scoped access control.
         state, and the revenue timeline chart/monthly summary table both
         rendering real bar heights after the Tailwind fix above
 
+## Production Stabilization (in progress)
+
+Triggered by the first real deployment (Vercel + Neon). Goal: make the
+existing nine pages solid before Phase 2 adds anything new — no new
+features in this pass except where fixing a real issue required one.
+
+- [x] Code-level accessibility pass: 9 icon-only buttons across 5
+      components (`calendar-board.tsx`, `account-detail-dialog.tsx`,
+      `asset-detail-dialog.tsx`, `content-detail-sheet.tsx`,
+      `inbox-board.tsx`) had no accessible name at all — screen readers
+      announced them as bare "button". All given `aria-label`s.
+- [x] Fixed `getApprovalTurnaround` (Analytics) fetching every
+      `ReviewEvent` in the workspace's entire history on every page
+      view regardless of the selected date range; scoped the query to
+      `createdAt >= bounds.start` without changing its pairing logic
+      or output.
+- [x] Trimmed `getWorkspaceAssets`'s query from `include` to an
+      explicit `select`, dropping the unused `metadata` column from
+      every row in the Assets list.
+- [x] Added `@@index([workspaceId, archived, updatedAt])` on
+      `Conversation` — the default Inbox list query's exact
+      WHERE + ORDER BY now hits one covering index instead of a
+      separate sort step.
+- [x] Added `src/app/robots.ts` (disallow everything except
+      `/login`/`/signup`) and a `robots: {index: false}` on the
+      `(dashboard)` layout — nothing crawlable existed before this;
+      everything past auth is per-tenant data with no reason to be
+      indexed.
+- [x] Elevated the in-memory rate-limiter's severity in
+      `TECH_DEBT.md` — deployed to Vercel's serverless runtime, "one
+      process" is the default execution model, not a future scaling
+      concern; login/signup brute-force protection is weaker in
+      production today than the code's own comment implies.
+- [x] Registered two previously-undocumented scalability boundaries:
+      Content/Calendar's unbounded list queries, and `ILIKE`-based
+      search's inability to use a standard index at larger row counts
+      (both in `TECH_DEBT.md`, both deliberately left unfixed rather
+      than patched with a stopgap that would change behavior).
+- [ ] Live verification against the actual production URL — deployment
+      smoke test, real-account auth flow, mobile responsiveness, and
+      all nine modules exercised against production, not local dev.
+      Blocked on having the URL; not yet performed.
+
 ## Phase 2 — Earn Trust at Scale (not started)
 
 Planned: real-time collaboration correctness (optimistic UI + server
@@ -543,4 +586,4 @@ customers, public API, billing/plan enforcement tied to real usage.
 
 ---
 
-_Last updated: after migrating the Inbox page to Server Components + Prisma._
+_Last updated: after the Production Stabilization pass following the first live Vercel deployment._

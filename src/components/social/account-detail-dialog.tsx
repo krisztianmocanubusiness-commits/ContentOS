@@ -147,7 +147,7 @@ export function AccountDetailDialog({
                   className="flex items-center gap-2"
                 >
                   <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} disabled={isPending} />
-                  <Button type="submit" size="icon" className="size-8 shrink-0" disabled={isPending}>
+                  <Button type="submit" size="icon" className="size-8 shrink-0" disabled={isPending} aria-label="Save name">
                     {isPending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
                   </Button>
                   <Button
@@ -157,6 +157,7 @@ export function AccountDetailDialog({
                     className="size-8 shrink-0"
                     onClick={() => setEditingName(false)}
                     disabled={isPending}
+                    aria-label="Cancel rename"
                   >
                     <XIcon className="size-4" />
                   </Button>
